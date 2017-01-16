@@ -985,6 +985,7 @@ bool ScriptingCore::log(JSContext* cx, uint32_t argc, jsval *vp)
 void ScriptingCore::retainScriptObject(cocos2d::Ref* owner, cocos2d::Ref* target)
 {
     JS::RootedObject global(_cx, _global->get());
+    JSAutoCompartment ac(_cx, global);
     JS::RootedObject jsbObj(_cx);
     get_or_create_js_obj(_cx, global, "jsb", &jsbObj);
     JS::RootedValue jsbVal(_cx, OBJECT_TO_JSVAL(jsbObj));
@@ -1018,6 +1019,7 @@ void ScriptingCore::retainScriptObject(cocos2d::Ref* owner, cocos2d::Ref* target
 void ScriptingCore::rootScriptObject(cocos2d::Ref* target)
 {
     JS::RootedObject global(_cx, _global->get());
+    JSAutoCompartment ac(_cx, global);
     JS::RootedObject jsbObj(_cx);
     get_or_create_js_obj(_cx, global, "jsb", &jsbObj);
     JS::RootedValue jsbVal(_cx, OBJECT_TO_JSVAL(jsbObj));
@@ -1052,6 +1054,7 @@ void ScriptingCore::rootScriptObject(cocos2d::Ref* target)
 void ScriptingCore::releaseScriptObject(cocos2d::Ref* owner, cocos2d::Ref* target)
 {
     JS::RootedObject global(_cx, _global->get());
+    JSAutoCompartment ac(_cx, global);
     JS::RootedObject jsbObj(_cx);
     get_or_create_js_obj(_cx, global, "jsb", &jsbObj);
     JS::RootedValue jsbVal(_cx, OBJECT_TO_JSVAL(jsbObj));
@@ -1085,6 +1088,7 @@ void ScriptingCore::releaseScriptObject(cocos2d::Ref* owner, cocos2d::Ref* targe
 void ScriptingCore::unrootScriptObject(cocos2d::Ref* target)
 {
     JS::RootedObject global(_cx, _global->get());
+    JSAutoCompartment ac(_cx, global);
     JS::RootedObject jsbObj(_cx);
     get_or_create_js_obj(_cx, global, "jsb", &jsbObj);
     JS::RootedValue jsbVal(_cx, OBJECT_TO_JSVAL(jsbObj));
@@ -1129,6 +1133,7 @@ void ScriptingCore::releaseAllChildrenRecursive(cocos2d::Node *node)
 void ScriptingCore::releaseAllNativeRefs(cocos2d::Ref* owner)
 {
     JS::RootedObject global(_cx, _global->get());
+    JSAutoCompartment ac(_cx, global);
     JS::RootedObject jsbObj(_cx);
     get_or_create_js_obj(_cx, global, "jsb", &jsbObj);
     JS::RootedValue jsbVal(_cx, OBJECT_TO_JSVAL(jsbObj));
