@@ -25,6 +25,7 @@
  ****************************************************************************/
 #include "AssetsManagerEx.h"
 #include "base/ccUTF8.h"
+#include "base/CCAsyncTaskPool.h"
 
 #include <stdio.h>
 
@@ -649,14 +650,14 @@ void AssetsManagerEx::decompressDownloadedZip(const std::string &customId, const
         }
         delete dataInner;
     };
-//    AsyncTaskPool::getInstance()->enqueue(AsyncTaskPool::TaskType::TASK_OTHER, decompressFinished, (void*)asyncData, [this, asyncData]() {
-//        // Decompress all compressed files
-//        if (decompress(asyncData->zipFile))
-//        {
-//            asyncData->succeed = true;
-//        }
-//        _fileUtils->removeFile(asyncData->zipFile);
-//    });
+    AsyncTaskPool::getInstance()->enqueue(AsyncTaskPool::TaskType::TASK_OTHER, decompressFinished, (void*)asyncData, [this, asyncData]() {
+        // Decompress all compressed files
+        if (decompress(asyncData->zipFile))
+        {
+            asyncData->succeed = true;
+        }
+        _fileUtils->removeFile(asyncData->zipFile);
+    });
 }
 
 void AssetsManagerEx::dispatchUpdateEvent(EventAssetsManagerEx::EventCode code, const std::string &assetId/* = ""*/, const std::string &message/* = ""*/, int curle_code/* = CURLE_OK*/, int curlm_code/* = CURLM_OK*/)
