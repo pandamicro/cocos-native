@@ -87,8 +87,6 @@ private:
     std::unordered_map<int, AudioPlayer*>  _audioPlayers;
     std::mutex _threadMutex;
     
-    // UrlAudioPlayers which need to resumed while entering foreground
-    std::unordered_map<int, AudioPlayer*> _urlAudioPlayersNeedResume;
     uint32_t _onPauseListenerID;
     uint32_t _onResumeListenerID;
 
