@@ -169,8 +169,8 @@ enum class CanvasTextBaseline {
         _fillRadialGradientEndR = state.fillRadialGradientEndR;
         _globalAlpha = state.globalAlpha;
         _lineWidth = state.lineWidth;
-        _lineCap = state.lineCap;
-        _lineJoin = state.lineJoin;
+        _lineCap = [state.lineCap copy];
+        _lineJoin = [state.lineJoin copy];
         _miterLimit = state.miterLimit;
         _lineDashOffset = state.lineDashOffset;
         if (state.shadowColor) {
@@ -187,7 +187,7 @@ enum class CanvasTextBaseline {
         if (state.tokenAttributesDict) {
             _tokenAttributesDict = [state.tokenAttributesDict mutableCopy];
         }
-        _fontName = state.fontName;
+        _fontName = [state.fontName copy];
         _fontSize = state.fontSize;
         _bold = state.bold;
         _italic = state.italic;
@@ -206,6 +206,18 @@ enum class CanvasTextBaseline {
     if (_font) {
         [_font release];
         _font = nil;
+    }
+    if (_lineCap) {
+        [_lineCap release];
+        _lineCap = nil;
+    }
+    if (_lineJoin) {
+        [_lineJoin release];
+        _lineJoin = nil;
+    }
+    if (_fontName) {
+        [_fontName release];
+        _fontName = nil;
     }
     if (_tokenAttributesDict) {
         [_tokenAttributesDict release];
