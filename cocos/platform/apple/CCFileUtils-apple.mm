@@ -507,7 +507,7 @@ bool FileUtilsApple::createDirectory(const std::string& path)
 
 FileUtils::Status FileUtilsApple::getContents(const std::string& filename, ResizableBuffer* buffer)
 {
-    NSString *fileName = [NSString stringWithCString:filename.c_str() encoding:[NSString defaultCStringEncoding]];
+    NSString *fileName = [NSString stringWithCString:filename.c_str() encoding:NSUTF8StringEncoding];
     NSString *prefix = [pimpl_->getBundle() resourcePath];
     fileName = [fileName stringByReplacingOccurrencesOfString:@ASSET_PREFIX withString:prefix];
     
