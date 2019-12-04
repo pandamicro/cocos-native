@@ -1243,11 +1243,17 @@ static void _readEllipsePointFromBezier(void *info, const CGPathElement *element
 #if CC_TARGET_PLATFORM == CC_PLATFORM_MAC
 #else
     // generate CGImageRef
-    CGDataProviderRef provider = CGDataProviderCreateWithData(nullptr, imageData.getBytes(), imageData.getSize(), nullptr);
-    CGColorSpaceRef colorSpaceRef = CGColorSpaceCreateDeviceRGB();
     size_t bitsPerComponent = 8;
     size_t bitsPerPixel = bitsPerComponent * 4;
     size_t bytesPerRow = ow * 4;
+    if (oh * bytesPerRow > imageData.getSize()) {
+        // 若当前需要绘制的图像的总字节数与通过图像原始宽高计算出的总字节数不一致，
+        // 则绘制失败。
+        // 强行绘制，有可能导致 CGImageCreate 崩溃。
+        return;
+    }
+    CGDataProviderRef provider = CGDataProviderCreateWithData(nullptr, imageData.getBytes(), imageData.getSize(), nullptr);
+    CGColorSpaceRef colorSpaceRef = CGColorSpaceCreateDeviceRGB();
     CGImageRef imgRef = CGImageCreate(ow,
                                       oh,
                                       bitsPerComponent,
