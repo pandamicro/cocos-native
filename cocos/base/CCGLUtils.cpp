@@ -27,13 +27,13 @@
 #include <cfloat>
 #include <cassert>
 #include <array>
+#include <unordered_map>
 
 NS_CC_BEGIN
 
 // todo: use gl to get the supported number
 #define MAX_ATTRIBUTE_UNIT  16
 #define MAX_TEXTURE_UNIT 32
-#define MAX_VAO_UNIT  16
 
 //IDEA: Consider to use variable to enable/disable cache state since using macro will not be able to close it if there're serious bugs.
 //#undef CC_ENABLE_GL_STATE_CACHE
@@ -46,8 +46,7 @@ namespace
     GLint __currentIndexBuffer = -1;
 
     GLint __currentVertexArray = -1;
-    uint32_t __enabledVertexArrayObjectFlag = 0;
-    VertexArrayObjectInfo __enabledVertexArrayObjectInfo[MAX_VAO_UNIT];
+    std::unordered_map<GLuint, GLint> __vaoNativeIdToBufferSize;
     
     uint32_t __enabledVertexAttribArrayFlag = 0;
     VertexAttributePointerInfo __enabledVertexAttribArrayInfo[MAX_ATTRIBUTE_UNIT];
@@ -63,6 +62,14 @@ namespace
     GLuint __currentOffScreenFbo = 0;
 }
 
+static GLint _getBufferSize(GLuint VAO) {
+    GLint bufferSize = 0;
+    auto iter = __vaoNativeIdToBufferSize.find(VAO);
+    if (iter != __vaoNativeIdToBufferSize.end()) {
+        bufferSize = iter->second;
+    }
+    return bufferSize;
+}
 
 //IDEA: need to consider invoking this after restarting game.
 void ccInvalidateStateCache()
@@ -71,10 +78,7 @@ void ccInvalidateStateCache()
     __currentIndexBuffer = -1;
 
     __currentVertexArray = -1;
-    __enabledVertexArrayObjectFlag = 0;
-    for (int i = 0; i < MAX_VAO_UNIT; ++i)
-        __enabledVertexArrayObjectInfo[i] = VertexArrayObjectInfo();
-    
+
     __enabledVertexAttribArrayFlag = 0;
     for (int i = 0; i < MAX_ATTRIBUTE_UNIT; ++i)
         __enabledVertexAttribArrayInfo[i] = VertexAttributePointerInfo();
@@ -198,23 +202,16 @@ GLint ccGetBoundIndexBuffer()
     return __currentIndexBuffer;
 }
 
-void ccBindVertexArray(GLuint VAO)
-{
+void ccBindVertexArray(GLuint VAO) {
 #if CC_ENABLE_GL_STATE_CACHE
     if (__currentVertexArray != VAO)
     {
-        if (__currentVertexArray >= 1)
-        {
+        if (__currentVertexArray >= 1) {
             GLint dataSize = ccGetBufferDataSize();
-            setDataSize(__currentVertexArray, dataSize);
+            __vaoNativeIdToBufferSize[__currentVertexArray] = dataSize;
         }
-        if (VAO >= 1 && !checkVAOExist(VAO))
-        {
-            if (getVAOCount() >= MAX_ATTRIBUTE_UNIT) return;
-            GLint index = getVAOUnusedIndex();
-            uint32_t flag = 1 << index;
-            __enabledVertexArrayObjectFlag |= flag;
-            __enabledVertexArrayObjectInfo[index].vertexArrayObject = VAO;
+        if (VAO >= 1 && __vaoNativeIdToBufferSize.find(VAO) == __vaoNativeIdToBufferSize.end()) {
+            __vaoNativeIdToBufferSize.emplace(VAO, 0);
             __currentVertexBuffer = -1;
             __currentIndexBuffer = -1;
             __enabledVertexAttribArrayFlag = 0;
@@ -228,23 +225,16 @@ void ccBindVertexArray(GLuint VAO)
 #endif
 }
 
-void ccDeleteVertexArrays(GLsizei n, const GLuint *arrays)
-{
-    for (GLsizei i = 0; i < n; ++i)
-    {
-        if (arrays[i] >= 1)
-        {
-            GLint index = getVAOIndex(arrays[i]);
-            if (index >= 0)
-            {
-                __enabledVertexArrayObjectInfo[index].vertexArrayObject = 0;
-                __enabledVertexArrayObjectInfo[index].dataSize = 0;
-                __enabledVertexArrayObjectFlag &= ~(1 << index);
+void ccDeleteVertexArrays(GLsizei n, const GLuint *arrays) {
+    for (GLsizei i = 0; i < n; ++i) {
+        if (arrays[i] >= 1) {
+            auto iter = __vaoNativeIdToBufferSize.find(arrays[i]);
+            if (iter != __vaoNativeIdToBufferSize.end()) {
+                __vaoNativeIdToBufferSize.erase(iter);
             }
         }
 
-        if (arrays[i] == __currentVertexArray)
-        {
+        if (arrays[i] == __currentVertexArray) {
             __currentVertexArray = -1;
         }
     }
@@ -553,7 +543,7 @@ GLint ccGetBufferDataSize()
     GLint result = 0, size = 0;
     if (__currentVertexArray >= 1)
     {
-        result = getDataSize(__currentVertexArray);
+        result = _getBufferSize(__currentVertexArray);
         if (result > 0)
         {
             return result;
@@ -587,72 +577,8 @@ GLint ccGetBufferDataSize()
     return result;
 }
 
-GLint getVAOCount()
-{
-    GLint count = 0;
-
-    for (int i = 0; i < MAX_VAO_UNIT; i++)
-    {
-        uint32_t flag = 1 << i;
-        if (__enabledVertexArrayObjectFlag & flag)
-        {
-            ++count;
-        }
-    }
-
-    return count;
-}
-
-GLint getVAOUnusedIndex()
-{
-    GLint index = -1;
-
-    for (int i = 0; i < MAX_VAO_UNIT; i++)
-    {
-        uint32_t flag = 1 << i;
-        if (!(__enabledVertexArrayObjectFlag & flag))
-        {
-            index = i;
-            break;
-        }
-    }
-
-    return index;
-}
-
-GLint getVAOIndex(GLuint VAO)
-{
-    GLint index = -1;
-    for (int i = 0; i < MAX_VAO_UNIT; i++)
-    {
-        uint32_t flag = 1 << i;
-        if ((__enabledVertexArrayObjectFlag & flag) &&
-            (__enabledVertexArrayObjectInfo[i].vertexArrayObject == VAO))
-        {
-            index = i;
-            break;
-        }
-    }
-    return index;
-}
-
-GLboolean checkVAOExist(GLuint VAO)
-{
-    return getVAOIndex(VAO) >= 0 ? GL_TRUE : GL_FALSE;
-}
-
-GLint getDataSize(GLuint VAO)
-{
-    GLint dataSize = 0;
-    GLint index = getVAOIndex(VAO);
-    if (index >= 0) dataSize = __enabledVertexArrayObjectInfo[index].dataSize;
-    return dataSize;
-}
-
-void setDataSize(GLuint VAO, GLint dataSize)
-{
-    GLint index = getVAOIndex(VAO);
-    if (index >= 0) __enabledVertexArrayObjectInfo[index].dataSize = dataSize;
+void ccClearVaoMap() {
+    __vaoNativeIdToBufferSize.clear();
 }
 
 NS_CC_END

@@ -5945,6 +5945,7 @@ bool JSB_register_opengl(se::Object* obj)
             __glVAOObj->decRef();
             __glVAOObj = nullptr;
         }
+        ccClearVaoMap();
         if (__gl_compressed_texture_etc1_obj != nullptr)
         {
             __gl_compressed_texture_etc1_obj->unroot();

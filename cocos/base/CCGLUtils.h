@@ -78,18 +78,6 @@ struct VertexAttributePointerInfo
     const GLvoid* pointer = nullptr;
 };
 
-struct VertexArrayObjectInfo
-{
-    VertexArrayObjectInfo(GLuint VAO, GLint size)
-    : vertexArrayObject(VAO)
-    , dataSize(size)
-    {}
-
-    VertexArrayObjectInfo() {}
-
-    GLuint vertexArrayObject = 0;
-    GLint dataSize = 0;
-};
 void ccEnableVertexAttribArray(GLuint index);
 void ccDisableVertexAttribArray(GLuint index);
 void ccVertexAttribPointer(GLuint, GLint, GLenum, GLboolean, GLsizei, const GLvoid*);
@@ -103,12 +91,6 @@ bool ccIsUnpackFlipY();
 bool ccIsPremultiplyAlpha();
 void ccPixelStorei(GLenum pname, GLint param);
 GLint ccGetBufferDataSize();
-
-GLint getVAOCount();
-GLint getVAOUnusedIndex();
-GLint getVAOIndex(GLuint VAO);
-GLboolean checkVAOExist(GLuint VAO);
-GLint getDataSize(GLuint VAO);
-void setDataSize(GLuint VAO, GLint dataSize);
+void ccClearVaoMap();
 
 NS_CC_END
