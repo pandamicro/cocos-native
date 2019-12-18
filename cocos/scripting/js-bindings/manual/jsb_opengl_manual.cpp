@@ -4199,10 +4199,10 @@ static bool JSB_glGetSupportedExtensions(se::State& s) {
             {
                 add = false;
                 jsobj->setArrayElement(element, se::Value(extensionName));
+                ++element;
             }
 
             start_extension = i+1;
-            ++element;
             ++i;
         }
     }
