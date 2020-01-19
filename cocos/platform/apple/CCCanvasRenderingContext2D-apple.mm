@@ -551,7 +551,7 @@ enum class CanvasTextBaseline {
     NSSize dim = [stringWithAttributes boundingRectWithSize:textRect options:(NSStringDrawingOptions)(NSStringDrawingUsesLineFragmentOrigin) context:nil].size;
 
     dim.width = ceilf(dim.width);
-    dim.height = ceilf(dim.height);
+    dim.height = ceilf(_drawingState.font.lineHeight);
 
     return dim;
 }
@@ -561,39 +561,24 @@ enum class CanvasTextBaseline {
     // Need to adjust 'point' according 'text align' & 'text base line'.
     NSSize textSize = [self measureText:text];
 
-    if (_drawingState.textAlign == CanvasTextAlign::CENTER)
-    {
+    if (_drawingState.textAlign == CanvasTextAlign::CENTER) {
         point.x -= textSize.width / 2.0f;
-    }
-    else if (_drawingState.textAlign == CanvasTextAlign::RIGHT)
-    {
+    } else if (_drawingState.textAlign == CanvasTextAlign::RIGHT) {
         point.x -= textSize.width;
     }
 
-    if (_drawingState.textBaseLine == CanvasTextBaseline::TOP)
-    {
-        point.y += _drawingState.fontSize;
-    }
-    else if (_drawingState.textBaseLine == CanvasTextBaseline::MIDDLE)
-    {
-        point.y += _drawingState.fontSize / 2.0f;
+    if (_drawingState.textBaseLine == CanvasTextBaseline::TOP) {
+        // no need to change, point.y is y loacation
+    } else if (_drawingState.textBaseLine == CanvasTextBaseline::MIDDLE) {
+        point.y -= textSize.height / 2.0;
+    } else {
+        point.y -= textSize.height;
     }
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_MAC
-    // We use font size to calculate text height, but 'drawPointAt' method on macOS is based on
-    // the real font height and in bottom-left position, add the adjust value to make the text inside text rectangle.
-    point.y += (textSize.height - _drawingState.fontSize) / 2.0f;
-
-    // The origin on macOS is bottom-left by default, so we need to convert y from top-left origin to bottom-left origin.
-    point.y = _height - point.y;
-#else
-    // The origin of drawing text on iOS is from top-left, but now we get bottom-left,
-    // So, we need to substract the font size to convert 'point' to top-left.
-    point.y -= _drawingState.fontSize;
-
-    // We use font size to calculate text height, but 'drawPointAt' method on iOS is based on
-    // the real font height and in top-left position, substract the adjust value to make text inside text rectangle.
-    point.y -= (textSize.height - _drawingState.fontSize) / 2.0f;
+    // FIXME: runtime doesn't need mac platform now,
+    // when mac is needed in runtime,
+    // there should resolve top-left origin and bottom-left origin question
 #endif
     return point;
 }
