@@ -50,10 +50,10 @@
 #include "cocos/scripting/js-bindings/manual/jsb_renderer_manual.hpp"
 #endif
 
-#if USE_SOCKET
+#if FEATURE_NETWORK_WEBSOCKET
 #include "cocos/scripting/js-bindings/manual/jsb_websocket.hpp"
 #include "cocos/scripting/js-bindings/manual/jsb_socketio.hpp"
-#endif // USE_SOCKET
+#endif // FEATURE_NETWORK_WEBSOCKET
 
 #if USE_AUDIO
 #include "cocos/scripting/js-bindings/auto/jsb_cocos2dx_audioengine_auto.hpp"

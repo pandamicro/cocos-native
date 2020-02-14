@@ -105,6 +105,24 @@ LOCAL_STATIC_LIBRARIES += v8_inspector
 LOCAL_STATIC_LIBRARIES += cocos_extension_static
 endif
 
+# if enable socket
+ifneq ($(FEATURE_NETWORK_WEBSOCKET),0)
+LOCAL_SRC_FILES += \
+network/SocketIO.cpp \
+scripting/js-bindings/manual/jsb_socketio.cpp \
+scripting/js-bindings/manual/jsb_websocket.cpp
+endif # FEATURE_NETWORK_WEBSOCKET
+
+# if use socket c/c++ implement library
+ifeq ($(FEATURE_NETWORK_WEBSOCKET),1)
+LOCAL_SRC_FILES += network/WebSocket-libwebsockets.cpp
+LOCAL_STATIC_LIBRARIES += libwebsockets_static
+LOCAL_STATIC_LIBRARIES += cocos_ssl_static
+LOCAL_STATIC_LIBRARIES += cocos_crypto_static
+endif
+
+
+
 # opengl bindings depend on GFXUtils "_JSB_GL_CHECK"
 LOCAL_SRC_FILES += \
 renderer/gfx/GFXUtils.cpp

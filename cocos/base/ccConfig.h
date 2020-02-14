@@ -54,10 +54,6 @@ THE SOFTWARE.
 #define USE_AUDIO 1
 #endif
 
-#ifndef USE_SOCKET
-#define USE_SOCKET 1
-#endif
-
 #ifndef USE_MIDDLEWARE
 #define USE_MIDDLEWARE 1
 #endif
