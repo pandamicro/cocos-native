@@ -833,6 +833,20 @@ namespace se {
         return ret;
     }
 
+    std::string Object::stringify() const {
+        std::string ret;
+        v8::Local<v8::Context> context = __isolate->GetCurrentContext();
+        auto *thiz = const_cast<Object *>(this);
+        v8::MaybeLocal<v8::String> v8Str = v8::JSON::Stringify(context, thiz->_getJSObject());
+        if (!v8Str.IsEmpty()) {
+            ret = *v8::String::Utf8Value(
+                    __isolate,
+                    v8::Local<v8::String>::Cast(v8Str.ToLocalChecked())
+            );
+        }
+        return ret;
+    }
+
 } // namespace se {
 
 #endif // #if SCRIPT_ENGINE_TYPE == SCRIPT_ENGINE_V8
