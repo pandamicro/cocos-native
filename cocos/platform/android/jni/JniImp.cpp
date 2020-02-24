@@ -326,6 +326,8 @@ extern "C"
         if (g_isGameFinished) {
             return;
         }
+        g_width = w;
+        g_height = h;
         uint8_t devicePixelRatio = Application::getInstance()->getDevicePixelRatio();
         EventDispatcher::dispatchResizeEvent(w / devicePixelRatio, h / devicePixelRatio);
     }
