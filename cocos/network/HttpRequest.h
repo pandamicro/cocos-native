@@ -91,7 +91,7 @@ public:
     , _callback(nullptr)
     , _headerCallback(nullptr)
     , _userData(nullptr)
-    , _timeoutInSeconds(10.0f)
+    , _timeoutInSeconds(0)
     {
     }
 
