@@ -1430,6 +1430,19 @@ namespace se {
         return ret;
     }
 
+    std::string Object::stringify() const {
+        std::string ret;
+        JSStringRef jsString = JSValueCreateJSONString(__cx, _obj, 0,NULL);
+        if(!jsString) {
+            return ret;
+        }
+        CFStringRef strRef = JSStringCopyCFString(kCFAllocatorDefault, jsString);
+        JSStringRelease(jsString);
+        ret = CFStringGetCStringPtr(strRef, kCFStringEncodingUTF8);
+        CFRelease(strRef);
+        return ret;
+    }
+
 } // namespace se {
 
 #endif // #if SCRIPT_ENGINE_TYPE == SCRIPT_ENGINE_JSC

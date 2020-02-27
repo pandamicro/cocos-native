@@ -361,6 +361,13 @@ namespace se {
          *  @return The string for describing current object.
          */
         std::string toString() const;
+        
+        /**
+         *  @brief Tries to stringify the JSON-serializable object and returns
+         *  it as string if successful.
+         *  @return The string for current object's JSON string.
+         */
+        std::string stringify() const;
 
         // Private API used in wrapper
         static Object* _createJSObject(Class* cls, JSObjectRef obj);

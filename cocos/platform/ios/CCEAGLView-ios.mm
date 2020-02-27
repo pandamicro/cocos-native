@@ -85,6 +85,8 @@ namespace
 
 #define MAX_TOUCH_COUNT     10
 
+extern BOOL g_is_game_finished;
+
 @interface CCEAGLView (Private)
 @end
 
@@ -518,6 +520,9 @@ namespace
 
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
+    if (g_is_game_finished) {
+        return;
+    }
     // When editbox is editing, should prevent glview to handle touch events.
     if (_needToPreventTouch)
     {
@@ -543,6 +548,9 @@ namespace
 
 - (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
 {
+    if (g_is_game_finished) {
+        return;
+    }
     cocos2d::TouchEvent touchEvent;
     touchEvent.type = cocos2d::TouchEvent::Type::MOVED;
     deliverTouch(touchEvent, touches, _touches, self.contentScaleFactor, false, _touchIds);
@@ -550,6 +558,9 @@ namespace
 
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
 {
+    if (g_is_game_finished) {
+        return;
+    }
     cocos2d::TouchEvent touchEvent;
     touchEvent.type = cocos2d::TouchEvent::Type::ENDED;
     deliverTouch(touchEvent, touches, _touches, self.contentScaleFactor, true, _touchIds);
@@ -557,6 +568,9 @@ namespace
 
 - (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event
 {
+    if (g_is_game_finished) {
+        return;
+    }
     cocos2d::TouchEvent touchEvent;
     touchEvent.type = cocos2d::TouchEvent::Type::CANCELLED;
     deliverTouch(touchEvent, touches, _touches, self.contentScaleFactor, true, _touchIds);

@@ -41,6 +41,7 @@
 
 #define SAMPLE_TIME 0.5
 extern uint32_t __jsbInvocationCount;
+BOOL g_is_game_finished = true;
 
 namespace
 {
@@ -314,6 +315,7 @@ std::shared_ptr<Scheduler> Application::_scheduler = nullptr;
 
 Application::Application(const std::string& name, int width, int height)
 {
+    g_is_game_finished = false;
     Application::_instance = this;
     _scheduler = std::make_shared<Scheduler>();
 
@@ -374,9 +376,7 @@ void Application::restart()
 
 void Application::end()
 {
-    delete this;
-
-    exit(0);
+    g_is_game_finished = true;
 }
 
 void Application::setPreDrawCallback(DrawCallback callback) {
