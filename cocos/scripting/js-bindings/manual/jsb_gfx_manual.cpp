@@ -486,12 +486,43 @@ bool js_register_gfx_GFXSubPass(se::Object* obj)
     return true;
 }
 
+static bool js_gfx_GFXPipelineLayout_get_layouts(se::State& s)
+{
+    cocos2d::GFXPipelineLayout* cobj = (cocos2d::GFXPipelineLayout*)s.nativeThisObject();
+    SE_PRECONDITION2(cobj, false, "js_gfx_GFXPipelineLayout_layouts : Invalid Native Object");
+    const auto& args = s.args();
+    size_t argc = args.size();
+    if (argc == 0) {
+        const std::vector<cocos2d::GFXBindingLayout *>& result = cobj->layouts();
+        
+        se::Value *layouts = &s.rval();
+        se::HandleObject arr(se::Object::createArrayObject(result.size()));
+        layouts->setObject(arr);
+        
+        uint32_t i  = 0;
+        for (const auto&layout : result)
+        {
+            se::Value out = se::Value::Null;
+            native_ptr_to_seval(layout, &out);
+            arr->setArrayElement(i, out);
+            
+            ++i;
+        }
+        return true;
+    }
+    SE_REPORT_ERROR("wrong number of arguments: %d, was expecting %d", (int)argc, 0);
+    return false;
+}
+SE_BIND_PROP_GET(js_gfx_GFXPipelineLayout_get_layouts)
+
 bool register_all_gfx_manual(se::Object* obj)
 {
     __jsb_cocos2d_GLES2Device_proto->defineFunction("copyBuffersToTexture", _SE(js_gfx_GLES2Device_copyBuffersToTexture));
     __jsb_cocos2d_GLES2Device_proto->defineFunction("copyTexImagesToTexture", _SE(js_gfx_GLES2Device_copyTexImagesToTexture));
     
     __jsb_cocos2d_GFXBuffer_proto->defineFunction("update", _SE(js_gfx_GFXBuffer_update));
+    
+    __jsb_cocos2d_GFXPipelineLayout_proto->defineProperty("layouts", _SE(js_gfx_GFXPipelineLayout_get_layouts), nullptr);
     
     js_register_gfx_GFXSubPass(obj);
     return true;
