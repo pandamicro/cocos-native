@@ -41,7 +41,7 @@ void CCMTLQueue::destroy()
     }
 }
 
-void CCMTLQueue::submit(const std::vector<GFXCommandBuffer*& cmd_buffs)
+void CCMTLQueue::submit(const std::vector<GFXCommandBuffer*>& cmd_buffs)
 {
     NSAutoreleasePool* autoReleasePool = [[NSAutoreleasePool alloc] init];
     uint count = static_cast<uint>(cmd_buffs.size());

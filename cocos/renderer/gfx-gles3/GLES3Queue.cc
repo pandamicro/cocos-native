@@ -21,7 +21,7 @@ bool GLES3Queue::initialize(const GFXQueueInfo &info) {
 void GLES3Queue::destroy() {
 }
 
-void GLES3Queue::submit(const std::vector<GFXCommandBuffer*& cmd_buffs) {
+void GLES3Queue::submit(const std::vector<GFXCommandBuffer*>& cmd_buffs) {
   if (!_isAsync) {
     uint count = static_cast<uint>(cmd_buffs.size());
     for (uint i = 0; i < count; ++i) {
