@@ -515,6 +515,46 @@ static bool js_gfx_GFXPipelineLayout_get_layouts(se::State& s)
 }
 SE_BIND_PROP_GET(js_gfx_GFXPipelineLayout_get_layouts)
 
+static bool js_gfx_GFXBlendState_get_targets(se::State& s)
+{
+    cocos2d::GFXBlendState* cobj = (cocos2d::GFXBlendState*)s.nativeThisObject();
+    SE_PRECONDITION2(cobj, false, "js_gfx_GFXBlendState_get_targets : Invalid Native Object");
+
+    CC_UNUSED bool ok = true;
+    se::Value *jsTargets = &s.rval();
+
+    const std::vector<cocos2d::GFXBlendTarget>& targets = cobj->targets;
+    se::HandleObject arr(se::Object::createArrayObject(targets.size()));
+    jsTargets->setObject(arr);
+    
+    uint32_t i  = 0;
+    for (const auto&target : targets)
+    {
+        se::Value out = se::Value::Null;
+        native_ptr_to_seval(target, &out);
+        arr->setArrayElement(i, out);
+        
+        ++i;
+    }
+    return true;
+}
+SE_BIND_PROP_GET(js_gfx_GFXBlendState_get_targets)
+
+static bool js_gfx_GFXBlendState_set_targets(se::State& s)
+{
+    const auto& args = s.args();
+    cocos2d::GFXBlendState* cobj = (cocos2d::GFXBlendState*)s.nativeThisObject();
+    SE_PRECONDITION2(cobj, false, "js_gfx_GFXBlendState_set_targets : Invalid Native Object");
+
+    CC_UNUSED bool ok = true;
+    std::vector<cocos2d::GFXBlendTarget> arg0;
+    ok &= seval_to_std_vector(args[0], &arg0);
+    SE_PRECONDITION2(ok, false, "js_gfx_GFXBlendState_set_targets : Error processing new value");
+    cobj->targets = arg0;
+    return true;
+}
+SE_BIND_PROP_SET(js_gfx_GFXBlendState_set_targets)
+
 bool register_all_gfx_manual(se::Object* obj)
 {
     __jsb_cocos2d_GLES2Device_proto->defineFunction("copyBuffersToTexture", _SE(js_gfx_GLES2Device_copyBuffersToTexture));
@@ -523,6 +563,8 @@ bool register_all_gfx_manual(se::Object* obj)
     __jsb_cocos2d_GFXBuffer_proto->defineFunction("update", _SE(js_gfx_GFXBuffer_update));
     
     __jsb_cocos2d_GFXPipelineLayout_proto->defineProperty("layouts", _SE(js_gfx_GFXPipelineLayout_get_layouts), nullptr);
+    
+    __jsb_cocos2d_GFXBlendState_proto->defineProperty("targets", _SE(js_gfx_GFXBlendState_get_targets), _SE(js_gfx_GFXBlendState_set_targets));
     
     js_register_gfx_GFXSubPass(obj);
     return true;
