@@ -58,15 +58,15 @@ void GLES3CommandBuffer::end() {
   _isInRenderPass = false;
 }
 
-void GLES3CommandBuffer::beginRenderPass(GFXFramebuffer* fbo, const GFXRect& render_area, GFXClearFlags clear_flags, GFXColor* colors, uint count, float depth, int stencil) {
+void GLES3CommandBuffer::beginRenderPass(GFXFramebuffer* fbo, const GFXRect& render_area, GFXClearFlags clear_flags, const std::vector<GFXColor>& colors, float depth, int stencil) {
   _isInRenderPass = true;
   
   GLES3CmdBeginRenderPass* cmd = _gles3Allocator->beginRenderPassCmdPool.alloc();
   cmd->gpuFBO = ((GLES3Framebuffer*)fbo)->gpuFBO();
   cmd->render_area = render_area;
   cmd->clear_flags = clear_flags;
-  cmd->num_clear_colors = count;
-  for (uint i = 0; i < count; ++i) {
+  cmd->num_clear_colors = (uint32_t)colors.size();
+  for (uint i = 0; i < colors.size(); ++i) {
     cmd->clear_colors[i] = colors[i];
   }
   cmd->clear_depth = depth;

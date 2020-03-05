@@ -20,7 +20,7 @@ class CC_GLES3_API GLES3CommandBuffer : public GFXCommandBuffer {
   
   void begin();
   void end();
-  void beginRenderPass(GFXFramebuffer* fbo, const GFXRect& render_area, GFXClearFlags clear_flags, GFXColor* colors, uint count, float depth, int stencil);
+  void beginRenderPass(GFXFramebuffer* fbo, const GFXRect& render_area, GFXClearFlags clear_flags, const std::vector<GFXColor>& colors, float depth, int stencil);
   void endRenderPass();
   void bindPipelineState(GFXPipelineState* pso);
   void bindBindingLayout(GFXBindingLayout* layout);

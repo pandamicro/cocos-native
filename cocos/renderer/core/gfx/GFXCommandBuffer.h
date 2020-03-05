@@ -15,7 +15,7 @@ public:
   virtual void destroy() = 0;
   virtual void begin() = 0;
   virtual void end() = 0;
-  virtual void beginRenderPass(GFXFramebuffer* fbo, const GFXRect& render_area, GFXClearFlags clear_flags, GFXColor* colors, uint count, float depth, int stencil) = 0;
+  virtual void beginRenderPass(GFXFramebuffer* fbo, const GFXRect& render_area, GFXClearFlags clear_flags, const std::vector<GFXColor>& colors, float depth, int stencil) = 0;
   virtual void endRenderPass() = 0;
   virtual void bindPipelineState(GFXPipelineState* pso) = 0;
   virtual void bindBindingLayout(GFXBindingLayout* layout) = 0;
