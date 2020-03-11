@@ -594,12 +594,6 @@
 		4043D65E20D2132E00C55611 /* CCGLView-desktop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4043D65C20D2132E00C55611 /* CCGLView-desktop.cpp */; };
 		4043D65F20D2132E00C55611 /* CCGLView-desktop.h in Headers */ = {isa = PBXBuildFile; fileRef = 4043D65D20D2132E00C55611 /* CCGLView-desktop.h */; };
 		40A346FB21F7124500E51F9B /* libfreetype.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 40A346FA21F7124400E51F9B /* libfreetype.a */; };
-		40AEF7AF216D940200729AA5 /* WebViewImpl-ios.mm in Sources */ = {isa = PBXBuildFile; fileRef = 40AEF7A9216D940200729AA5 /* WebViewImpl-ios.mm */; };
-		40AEF7B1216D940200729AA5 /* WebView-inl.h in Headers */ = {isa = PBXBuildFile; fileRef = 40AEF7AB216D940200729AA5 /* WebView-inl.h */; };
-		40AEF7B2216D940200729AA5 /* WebView.h in Headers */ = {isa = PBXBuildFile; fileRef = 40AEF7AC216D940200729AA5 /* WebView.h */; };
-		40AEF7B3216D940200729AA5 /* WebViewImpl-ios.h in Headers */ = {isa = PBXBuildFile; fileRef = 40AEF7AD216D940200729AA5 /* WebViewImpl-ios.h */; };
-		40AEF7B6216D982600729AA5 /* jsb_webview_auto.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40AEF7B4216D982600729AA5 /* jsb_webview_auto.cpp */; };
-		40AEF7B7216D982600729AA5 /* jsb_webview_auto.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 40AEF7B5216D982600729AA5 /* jsb_webview_auto.hpp */; };
 		40AEF7C1216DF22500729AA5 /* jsb_video_auto.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 40AEF7BE216DF21B00729AA5 /* jsb_video_auto.hpp */; };
 		40AEF7C2216DF22900729AA5 /* jsb_video_auto.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40AEF7BD216DF21B00729AA5 /* jsb_video_auto.cpp */; };
 		40CEAEB120CFC86D007A3281 /* CustomEventTypes.h in Headers */ = {isa = PBXBuildFile; fileRef = 40CEAEB020CFC86D007A3281 /* CustomEventTypes.h */; };
@@ -1513,12 +1507,6 @@
 		4043D65C20D2132E00C55611 /* CCGLView-desktop.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "CCGLView-desktop.cpp"; sourceTree = "<group>"; };
 		4043D65D20D2132E00C55611 /* CCGLView-desktop.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "CCGLView-desktop.h"; sourceTree = "<group>"; };
 		40A346FA21F7124400E51F9B /* libfreetype.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libfreetype.a; path = ../external/ios/libs/libfreetype.a; sourceTree = "<group>"; };
-		40AEF7A9216D940200729AA5 /* WebViewImpl-ios.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = "WebViewImpl-ios.mm"; sourceTree = "<group>"; };
-		40AEF7AB216D940200729AA5 /* WebView-inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "WebView-inl.h"; sourceTree = "<group>"; };
-		40AEF7AC216D940200729AA5 /* WebView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WebView.h; sourceTree = "<group>"; };
-		40AEF7AD216D940200729AA5 /* WebViewImpl-ios.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "WebViewImpl-ios.h"; sourceTree = "<group>"; };
-		40AEF7B4216D982600729AA5 /* jsb_webview_auto.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = jsb_webview_auto.cpp; sourceTree = "<group>"; };
-		40AEF7B5216D982600729AA5 /* jsb_webview_auto.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = jsb_webview_auto.hpp; sourceTree = "<group>"; };
 		40AEF7BD216DF21B00729AA5 /* jsb_video_auto.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = jsb_video_auto.cpp; sourceTree = "<group>"; };
 		40AEF7BE216DF21B00729AA5 /* jsb_video_auto.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = jsb_video_auto.hpp; sourceTree = "<group>"; };
 		40CEAEB020CFC86D007A3281 /* CustomEventTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CustomEventTypes.h; sourceTree = "<group>"; };
@@ -2497,17 +2485,6 @@
 			path = desktop;
 			sourceTree = "<group>";
 		};
-		40AEF7A7216D940100729AA5 /* webview */ = {
-			isa = PBXGroup;
-			children = (
-				40AEF7A9216D940200729AA5 /* WebViewImpl-ios.mm */,
-				40AEF7AB216D940200729AA5 /* WebView-inl.h */,
-				40AEF7AC216D940200729AA5 /* WebView.h */,
-				40AEF7AD216D940200729AA5 /* WebViewImpl-ios.h */,
-			);
-			path = webview;
-			sourceTree = "<group>";
-		};
 		40FF7A9C216B29CB00E73029 /* videoplayer */ = {
 			isa = PBXGroup;
 			children = (
@@ -2547,7 +2524,6 @@
 		461DCA3220BBFA2D00B22827 /* ui */ = {
 			isa = PBXGroup;
 			children = (
-				40AEF7A7216D940100729AA5 /* webview */,
 				40FF7A9C216B29CB00E73029 /* videoplayer */,
 				461DCA3320BBFA2D00B22827 /* edit-box */,
 			);
@@ -2637,10 +2613,8 @@
 				046E0708218B015000B24E2D /* jsb_cocos2dx_dragonbones_auto.hpp */,
 				40AEF7BD216DF21B00729AA5 /* jsb_video_auto.cpp */,
 				40AEF7BE216DF21B00729AA5 /* jsb_video_auto.hpp */,
-				40AEF7B4216D982600729AA5 /* jsb_webview_auto.cpp */,
 				046B68AB21A294B100B33469 /* jsb_cocos2dx_spine_auto.cpp */,
 				046B68AA21A294B100B33469 /* jsb_cocos2dx_spine_auto.hpp */,
-				40AEF7B5216D982600729AA5 /* jsb_webview_auto.hpp */,
 				1AAAC871205CB647005321B9 /* jsb_cocos2dx_audioengine_auto.cpp */,
 				1AAAC872205CB647005321B9 /* jsb_cocos2dx_audioengine_auto.hpp */,
 				1A29D767205665BE00168D9A /* jsb_cocos2dx_auto.cpp */,
@@ -3534,7 +3508,6 @@
 				046E06692185B41B00B24E2D /* Constraint.h in Headers */,
 				046B689621A10D5800B33469 /* MiddlewareMacro.h in Headers */,
 				46FDDA82202ACC6A00931238 /* RendererUtils.h in Headers */,
-				40AEF7B7216D982600729AA5 /* jsb_webview_auto.hpp in Headers */,
 				50ABC0101926664800A911A9 /* CCFileUtils.h in Headers */,
 				40FF7AA2216B29CC00E73029 /* VideoPlayer.h in Headers */,
 				1A29D77E2056667800168D9A /* csscolorparser.hpp in Headers */,
@@ -3544,7 +3517,6 @@
 				04355873217EAE1B00B9C056 /* extension.h in Headers */,
 				04355889217EAE1B00B9C056 /* BoundingBoxAttachment.h in Headers */,
 				46AE40062092F3A600F3A228 /* inspector_socket.h in Headers */,
-				40AEF7B1216D940200729AA5 /* WebView-inl.h in Headers */,
 				503DD8E61926736A00CD74DD /* CCEAGLView-ios.h in Headers */,
 				043558B1217EAE1B00B9C056 /* MeshAttachment.h in Headers */,
 				46FDDAC8202ACC6A00931238 /* GFX.h in Headers */,
@@ -3604,7 +3576,6 @@
 				469304012046AE06004A3D6C /* jsb_global.h in Headers */,
 				46AE3FF82092F3A600F3A228 /* util-inl.h in Headers */,
 				46FDDADE202ACC6A00931238 /* VertexBuffer.h in Headers */,
-				40AEF7B3216D940200729AA5 /* WebViewImpl-ios.h in Headers */,
 				1A28FF621F20AFAB007A1D9D /* SRRunLoopThread.h in Headers */,
 				46FDDA86202ACC6A00931238 /* View.h in Headers */,
 				46FDDAD8202ACC6A00931238 /* GFXUtils.h in Headers */,
@@ -3663,7 +3634,6 @@
 				469303D32046AE05004A3D6C /* jsb_gfx_auto.hpp in Headers */,
 				046E068B2185B44A00B24E2D /* BaseFactory.h in Headers */,
 				046E063C2185B41100B24E2D /* WorldClock.h in Headers */,
-				40AEF7B2216D940200729AA5 /* WebView.h in Headers */,
 				1AAAC8F4205CB6E9005321B9 /* AudioEngine.h in Headers */,
 				046B68A921A292D300B33469 /* jsb_spine_manual.hpp in Headers */,
 				46FDDA78202ACC6A00931238 /* Light.h in Headers */,
@@ -4318,7 +4288,6 @@
 				BA043788217EEF74006BA60F /* ModelBatcher.cpp in Sources */,
 				1A29D797205666F500168D9A /* jsb_opengl_utils.cpp in Sources */,
 				046E06E22185B49F00B24E2D /* DragonBonesData.cpp in Sources */,
-				40AEF7B6216D982600729AA5 /* jsb_webview_auto.cpp in Sources */,
 				5027253D190BF1B900AAF4ED /* cocos2d.cpp in Sources */,
 				1A28FF781F20AFAB007A1D9D /* SRHTTPConnectMessage.m in Sources */,
 				046E06C62185B49F00B24E2D /* AnimationConfig.cpp in Sources */,
@@ -4353,7 +4322,6 @@
 				469304592046AE06004A3D6C /* EventDispatcher.cpp in Sources */,
 				46FDDAB4202ACC6A00931238 /* VertexBuffer.cpp in Sources */,
 				4617864E205224CF008256E1 /* HttpClient-apple.mm in Sources */,
-				40AEF7AF216D940200729AA5 /* WebViewImpl-ios.mm in Sources */,
 				046E03F421804E6B00B24E2D /* spine-cocos2dx.cpp in Sources */,
 				46FDDB94202ADDCE00931238 /* TGAlib.cpp in Sources */,
 				1A28FF841F20AFAB007A1D9D /* SRRandom.m in Sources */,
