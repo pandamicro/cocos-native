@@ -242,6 +242,14 @@ namespace
 
 -(void) doCaller: (id) sender
 {
+    if (g_is_game_finished) {
+        // if g_is_game_finished is true,
+        // not to swap buffer,
+        // and notifiy _postDrawCallback to delete CCApplication instance.
+        if (_postDrawCallback != nullptr) {
+            _postDrawCallback(_fps);
+        }
+    }
     if (!_isAppActive) {
         // Application is in backgroud
         return;
