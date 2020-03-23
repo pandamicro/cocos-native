@@ -190,6 +190,8 @@ public:
 
     std::string getSystemVersion();
     
+    void setOnGameFinishedCallback(void(*callback)());
+    
     void setPreDrawCallback(DrawCallback callback);
     
     void setPostDrawCallback(DrawCallback callback);
@@ -215,6 +217,7 @@ private:
     bool _multiTouch = false;
     bool _isStarted = false;
     bool _isDownsampleEnabled = false;
+    void(*_onGameFinishedCallback)();
 };
 
 // end of platform group
