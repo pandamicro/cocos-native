@@ -38,6 +38,8 @@
 #define TO_TEXT_VIEW(textinput)   ((UITextView*)textinput)
 #define TO_TEXT_FIELD(textinput)  ((UITextField*)textinput)
 
+extern void jsb_rt_on_update_keyboard(bool success);
+
 /*************************************************************************
  Inner class declarations.
  ************************************************************************/
@@ -519,6 +521,17 @@ void EditBox::hide()
     }
     
     [(CCEAGLView*)cocos2d::Application::getInstance()->getView() setPreventTouchEvent:false];
+}
+
+void EditBox::update(const std::string &value) {
+    bool ret = false;
+    UIView *view = getCurrentView();
+    if (view && view.superview != nil) {
+        NSString *text = [NSString stringWithUTF8String:value.c_str()];
+        setText(text);
+        ret = true;
+    }
+    jsb_rt_on_update_keyboard(ret);
 }
 
 void EditBox::complete()

@@ -47,6 +47,7 @@ public:
     
 	static void show(const ShowInfo& showInfo);
 	static void hide();
+    static void update(const std::string &value);
     
     // It is internally to send a complete message to JS.
     // Don't call it by yourself untile you know the effect.
