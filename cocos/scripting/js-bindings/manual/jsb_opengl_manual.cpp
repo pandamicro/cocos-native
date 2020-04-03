@@ -5126,6 +5126,7 @@ static bool JSB_glGetParameter(se::State& s)
         case GL_BLEND_DST_ALPHA:
         case GL_ACTIVE_TEXTURE:
         case GL_MAX_TEXTURE_IMAGE_UNITS:
+        case GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS:
             JSB_GL_CHECK(glGetIntegerv(pname, intbuffer));
             ret.setInt32(intbuffer[0]);
             break;
