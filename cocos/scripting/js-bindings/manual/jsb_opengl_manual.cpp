@@ -158,6 +158,9 @@ namespace {
     const uint32_t GL_COMMAND_VERTEX_ATTRIB_4FV = 95;
     const uint32_t GL_COMMAND_VERTEX_ATTRIB_POINTER = 96;
     const uint32_t GL_COMMAND_VIEW_PORT = 97;
+    const uint32_t  GL_COMMAND_VERTEX_ATTRIB_DIVISOR = 98;
+    const uint32_t  GL_COMMAND_DRAW_ARRAYS_INSTANCED = 99;
+    const uint32_t  GL_COMMAND_DRAW_ELEMENTS_INSTANCED = 100;
 
     const uint32_t GL_FLOAT_ARRAY = 1;
     const uint32_t GL_INT_ARRAY = 2;
@@ -4235,12 +4238,11 @@ static bool JSB_glDrawElementsInstancedANGLE(se::State& s) {
     }
 
     SE_PRECONDITION2(ok, false, "Error processing arguments");
+    int size = 0;
 #if OPENGL_PARAMETER_CHECK
     SE_PRECONDITION4(arg2 == GL_UNSIGNED_BYTE || arg2 == GL_UNSIGNED_SHORT, false, GL_INVALID_ENUM);
 
     SE_PRECONDITION4(arg1 >= 0 && indices >= 0 && arg4 >= 0, false, GL_INVALID_VALUE);
-
-    int size = 0;
 
     switch (arg2)
     {
@@ -5899,6 +5901,72 @@ static bool JSB_glFlushCommand(se::State& s) {
                 JSB_GL_CHECK_VOID(ccViewport((GLint)p[1], (GLint)p[2], (GLsizei)p[3], (GLsizei)p[4]));
                 p += 5;
                 break;
+            case GL_COMMAND_VERTEX_ATTRIB_DIVISOR:
+                LOG_GL_COMMAND("Flush: VERTEX_ATTRIB_DIVISOR\n");
+                JSB_GL_CHECK_VOID(glVertexAttribDivisor((GLuint)p[1], (GLuint)p[2]));
+                p += 3;
+                break;
+            case GL_COMMAND_DRAW_ARRAYS_INSTANCED:
+            {
+                LOG_GL_COMMAND("Flush: DRAW_ARRAYS_INSTANCED, %u, %d, %d\n", (GLenum)p[1], (GLint)p[2], (int)p[3]);
+#if OPENGL_PARAMETER_CHECK
+                SE_PRECONDITION4((GLint) p[2] >= 0 && (GLint) p[4] >= 0, false, GL_INVALID_VALUE);
+#endif
+#if OPENGL_PARAMETER_CHECK_PERFORMANCE_HEAVY
+                int buffer = 0;
+                JSB_GL_CHECK(glGetIntegerv(GL_CURRENT_PROGRAM, &buffer));
+                SE_PRECONDITION4(buffer > 0, false, GL_INVALID_OPERATION);
+
+                GLint data = 0;
+                glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &data);
+                int64_t size = ccGetBufferDataSize(), first = (GLint) p[2];
+                int64_t total = (int64_t)(size * ((GLsizei) p[3] > 0 ? first + (GLsizei) p[3] : (GLsizei) p[3]));
+                SE_PRECONDITION4(total <= data, false, GL_INVALID_OPERATION);
+#endif
+                JSB_GL_CHECK_VOID(glDrawArraysInstanced((GLenum)p[1], (GLint)p[2], (GLsizei)p[3], (GLsizei)p[4]));
+                drawCallCount++;
+                p += 5;
+                break;
+            }
+            case GL_COMMAND_DRAW_ELEMENTS_INSTANCED:
+            {
+                LOG_GL_COMMAND("Flush: DRAW_ELEMENTS_INSTANCED\n");
+                int elementsOffset = (int) p[4];
+                int size = 0;
+#if OPENGL_PARAMETER_CHECK
+                SE_PRECONDITION4((GLenum) p[3] == GL_UNSIGNED_BYTE || (GLenum) p[3] == GL_UNSIGNED_SHORT, false, GL_INVALID_ENUM);
+
+                SE_PRECONDITION4((GLsizei) p[2] >= 0 && elementsOffset >= 0 && p[5] >= 0, false, GL_INVALID_VALUE);
+
+                switch ((GLenum)p[3])
+                {
+                    case GL_UNSIGNED_BYTE:
+                        size = sizeof(GLbyte);
+                        break;
+                    case GL_UNSIGNED_SHORT:
+                        size = sizeof(GLshort);
+                        break;
+                }
+
+                SE_PRECONDITION4(elementsOffset % size == 0, false, GL_INVALID_OPERATION);
+#endif
+#if OPENGL_PARAMETER_CHECK_PERFORMANCE_HEAVY
+                int buffer = 0;
+                JSB_GL_CHECK(glGetIntegerv(GL_CURRENT_PROGRAM, &buffer));
+                SE_PRECONDITION4(buffer > 0, false, GL_INVALID_OPERATION);
+
+                JSB_GL_CHECK(glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &buffer));
+                SE_PRECONDITION4(buffer > 0, false, GL_INVALID_OPERATION);
+
+                GLint elementSize = 0;
+                glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &elementSize);
+                SE_PRECONDITION4((GLsizei)p[2] == 0 || ((elementSize > elementsOffset) && (GLsizei)p[2] <= ((elementSize - elementsOffset) / size)), false, GL_INVALID_OPERATION);
+#endif
+                JSB_GL_CHECK(glDrawElementsInstanced((GLenum)p[1], (GLsizei)p[2], (GLenum)p[3], (const GLvoid*)(intptr_t)p[4], (GLsizei)p[5]));
+                drawCallCount++;
+                p += 6;
+                break;
+            }
             default:
                 assert(false);
         }
