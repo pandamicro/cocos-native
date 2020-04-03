@@ -38,6 +38,9 @@ THE SOFTWARE.
 #define glGenVertexArrays           glGenVertexArraysOES
 #define glBindVertexArray           glBindVertexArrayOES
 #define glIsVertexArray             glIsVertexArrayOES
+#define glVertexAttribDivisor       glVertexAttribDivisorEXT
+#define glDrawArraysInstanced       glDrawArraysInstancedEXT
+#define glDrawElementsInstanced     glDrawElementsInstancedEXT
 //#define glMapBuffer                 glMapBufferOES
 //#define glUnmapBuffer               glUnmapBufferOES
 //

@@ -35,6 +35,9 @@ THE SOFTWARE.
 #define glGenVertexArrays           glGenVertexArraysOES
 #define glBindVertexArray           glBindVertexArrayOES
 #define glIsVertexArray             glIsVertexArrayOES
+#define glVertexAttribDivisor       glVertexAttribDivisorEXT
+#define glDrawArraysInstanced       glDrawArraysInstancedEXT
+#define glDrawElementsInstanced     glDrawElementsInstancedEXT
 #define glMapBuffer                 glMapBufferOES
 #define glUnmapBuffer               glUnmapBufferOES
 #define glTexImage3D				glTexImage3DOES
@@ -71,12 +74,17 @@ extern PFNGLGENVERTEXARRAYSOESPROC glGenVertexArraysOESEXT;
 extern PFNGLBINDVERTEXARRAYOESPROC glBindVertexArrayOESEXT;
 extern PFNGLDELETEVERTEXARRAYSOESPROC glDeleteVertexArraysOESEXT;
 extern PFNGLISVERTEXARRAYOESPROC glIsVertexArrayOESEXT;
+extern PFNGLVERTEXATTRIBDIVISOREXTPROC glVertexAttribDivisorEXTEXT;
+extern PFNGLDRAWARRAYSINSTANCEDEXTPROC glDrawArraysInstancedEXTEXT;
+extern PFNGLDRAWELEMENTSINSTANCEDEXTPROC glDrawElementsInstancedEXTEXT;
 
 #define glGenVertexArraysOES glGenVertexArraysOESEXT
 #define glBindVertexArrayOES glBindVertexArrayOESEXT
 #define glDeleteVertexArraysOES glDeleteVertexArraysOESEXT
 #define glIsVertexArrayOES glIsVertexArrayOESEXT
-
+#define glVertexAttribDivisorEXT glVertexAttribDivisorEXTEXT
+#define glDrawArraysInstancedEXT glDrawArraysInstancedEXTEXT
+#define glDrawElementsInstancedEXT glDrawElementsInstancedEXTEXT
 
 #endif // CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
 

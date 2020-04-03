@@ -52,6 +52,9 @@ PFNGLGENVERTEXARRAYSOESPROC glGenVertexArraysOESEXT = nullptr;
 PFNGLBINDVERTEXARRAYOESPROC glBindVertexArrayOESEXT = nullptr;
 PFNGLDELETEVERTEXARRAYSOESPROC glDeleteVertexArraysOESEXT = nullptr;
 PFNGLISVERTEXARRAYOESPROC glIsVertexArrayOESEXT = nullptr;
+PFNGLVERTEXATTRIBDIVISOREXTPROC glVertexAttribDivisorEXTEXT = nullptr;
+PFNGLDRAWARRAYSINSTANCEDEXTPROC glDrawArraysInstancedEXTEXT = nullptr;
+PFNGLDRAWELEMENTSINSTANCEDEXTPROC glDrawElementsInstancedEXTEXT = nullptr;
 
 NS_CC_BEGIN
 
@@ -61,15 +64,19 @@ std::shared_ptr<Scheduler> Application::_scheduler = nullptr;
 Application::Application(const std::string& name, int width, int height)
 {
     Application::_instance = this;
-    Configuration::getInstance();
-
-    _scheduler = std::make_shared<Scheduler>();
 
     glGenVertexArraysOESEXT = (PFNGLGENVERTEXARRAYSOESPROC)eglGetProcAddress("glGenVertexArraysOES");
     glBindVertexArrayOESEXT = (PFNGLBINDVERTEXARRAYOESPROC)eglGetProcAddress("glBindVertexArrayOES");
     glDeleteVertexArraysOESEXT = (PFNGLDELETEVERTEXARRAYSOESPROC)eglGetProcAddress("glDeleteVertexArraysOES");
     glIsVertexArrayOESEXT = (PFNGLISVERTEXARRAYOESPROC)eglGetProcAddress("glIsVertexArrayOES");
 
+    glVertexAttribDivisorEXTEXT = (PFNGLVERTEXATTRIBDIVISOREXTPROC)eglGetProcAddress("glVertexAttribDivisor");
+    glDrawArraysInstancedEXTEXT = (PFNGLDRAWARRAYSINSTANCEDEXTPROC)eglGetProcAddress("glDrawArraysInstanced");
+    glDrawElementsInstancedEXTEXT = (PFNGLDRAWELEMENTSINSTANCEDEXTPROC)eglGetProcAddress("glDrawElementsInstanced");
+
+    Configuration::getInstance();
+
+    _scheduler = std::make_shared<Scheduler>();
     _renderTexture = new RenderTexture(width, height);
 }
 

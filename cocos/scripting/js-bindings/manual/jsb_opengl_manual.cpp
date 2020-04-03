@@ -181,7 +181,9 @@ namespace {
     se::Class* __jsb_WebGLUniformLocation_class = nullptr;
     se::Class* __jsb_VertexArrayObjectOES_class = nullptr;
     se::Class* __jsb_OES_vertex_array_object_class = nullptr;
+    se::Class* __jsb_ANGLE_instanced_arrays_class = nullptr;
     se::Object* __glVAOObj = nullptr;
+    se::Object* __glANGLE_instanced = nullptr;
     se::Object* __gl_compressed_texture_etc1_obj = nullptr;
     se::Object* __gl_compressed_texture_pvrtc_obj = nullptr;
 
@@ -3404,7 +3406,10 @@ static bool JSB_glGetVertexAttrib(se::State& s)
         if (pname == GL_VERTEX_ATTRIB_ARRAY_ENABLED || pname == GL_VERTEX_ATTRIB_ARRAY_NORMALIZED) {
             s.rval().setBoolean(value == 0 ? false : true);
         }
-        else if (pname == GL_VERTEX_ATTRIB_ARRAY_SIZE || pname == GL_VERTEX_ATTRIB_ARRAY_STRIDE || pname == GL_VERTEX_ATTRIB_ARRAY_TYPE) {
+        else if (pname == GL_VERTEX_ATTRIB_ARRAY_SIZE
+                 || pname == GL_VERTEX_ATTRIB_ARRAY_STRIDE
+                 || pname == GL_VERTEX_ATTRIB_ARRAY_TYPE
+                 || pname == GL_VERTEX_ATTRIB_ARRAY_DIVISOR_EXT) {
             s.rval().setNumber(value);
         }
         else {
@@ -4149,6 +4154,145 @@ static bool JSB_getVERTEX_ARRAY_BINDING_OES(se::State &s) {
 }
 SE_BIND_PROP_GET(JSB_getVERTEX_ARRAY_BINDING_OES)
 
+static bool JSB_getVERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE(se::State &s) {
+    const auto &args = s.args();
+    int argc = (int) args.size();
+
+    if (argc == 0) {
+        s.rval().setInt32(GL_VERTEX_ATTRIB_ARRAY_DIVISOR_EXT);
+        return true;
+    }
+    SE_REPORT_ERROR("wrong number of arguments: %d, was expecting 0", argc);
+    return false;
+}
+SE_BIND_PROP_GET(JSB_getVERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE)
+
+static bool JSB_glANGLE_instanced_arraysFinalize(se::State& s)
+{
+    return true;
+}
+SE_BIND_FINALIZE_FUNC(JSB_glANGLE_instanced_arraysFinalize)
+
+static bool JSB_glANGLE_instanced_arrays_constructor(se::State& s)
+{
+    se::ScriptEngine* se = se::ScriptEngine::getInstance();
+    se->ThrowException("Illegal constructor");
+    return false;
+}
+SE_BIND_CTOR(JSB_glANGLE_instanced_arrays_constructor, __jsb_ANGLE_instanced_arrays_class, JSB_glOES_vertex_array_objectFinalize)
+
+static bool JSB_glDrawArraysInstancedANGLE(se::State& s) {
+    const auto& args = s.args();
+    int argc = (int)args.size();
+    SE_PRECONDITION2(argc == 4, false, "Invalid number of arguments");
+    bool ok = true;
+    uint32_t arg0; int32_t arg1; int32_t arg2; int32_t arg3;
+
+    ok &= seval_to_uint32(args[0], &arg0);
+    ok &= seval_to_int32(args[1], &arg1);
+    ok &= seval_to_int32(args[2], &arg2);
+    ok &= seval_to_int32(args[3], &arg3);
+    SE_PRECONDITION2(ok, false, "Error processing arguments");
+#if OPENGL_PARAMETER_CHECK
+    SE_PRECONDITION4(arg1 >= 0 && arg3 >= 0, false, GL_INVALID_VALUE);
+#endif
+#if OPENGL_PARAMETER_CHECK_PERFORMANCE_HEAVY
+    int buffer = 0;
+    JSB_GL_CHECK(glGetIntegerv(GL_CURRENT_PROGRAM, &buffer));
+    SE_PRECONDITION4(buffer > 0, false, GL_INVALID_OPERATION);
+
+    GLint data = 0;
+    glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &data);
+    int64_t size = ccGetBufferDataSize(), first = arg1;
+    int64_t total = (int64_t)(size * (arg2 > 0 ? first + arg2 : arg2));
+    SE_PRECONDITION4(total <= data, false, GL_INVALID_OPERATION);
+#endif
+    JSB_GL_CHECK(glDrawArraysInstanced((GLenum)arg0, (GLint)arg1, (GLsizei)arg2, (GLsizei)arg3));
+    drawCallCount++;
+    return true;
+}
+SE_BIND_FUNC(JSB_glDrawArraysInstancedANGLE)
+
+static bool JSB_glDrawElementsInstancedANGLE(se::State& s) {
+    const auto& args = s.args();
+    int argc = (int)args.size();
+    SE_PRECONDITION2(argc == 5, false, "Invalid number of arguments");
+    bool ok = true;
+    uint32_t arg0; int32_t arg1; uint32_t arg2; void* arg3 = nullptr; int32_t arg4;
+
+    ok &= seval_to_uint32(args[0], &arg0);
+    ok &= seval_to_int32(args[1], &arg1);
+    ok &= seval_to_uint32(args[2], &arg2);
+    ok &= seval_to_int32(args[4], &arg4);
+
+    const se::Value& indicesVal = args[3];
+    int indices = 0;
+
+    if (indicesVal.isNumber())
+    {
+        ok &= seval_to_int32(indicesVal, &indices);
+        arg3 = (void*)(intptr_t)indices;
+    }
+
+    SE_PRECONDITION2(ok, false, "Error processing arguments");
+#if OPENGL_PARAMETER_CHECK
+    SE_PRECONDITION4(arg2 == GL_UNSIGNED_BYTE || arg2 == GL_UNSIGNED_SHORT, false, GL_INVALID_ENUM);
+
+    SE_PRECONDITION4(arg1 >= 0 && indices >= 0 && arg4 >= 0, false, GL_INVALID_VALUE);
+
+    int size = 0;
+
+    switch (arg2)
+    {
+        case GL_UNSIGNED_BYTE:
+            size = sizeof(GLbyte);
+            break;
+        case GL_UNSIGNED_SHORT:
+            size = sizeof(GLshort);
+            break;
+    }
+
+    SE_PRECONDITION4(indices % size == 0, false, GL_INVALID_OPERATION);
+#endif
+#if OPENGL_PARAMETER_CHECK_PERFORMANCE_HEAVY
+    int buffer = 0;
+    JSB_GL_CHECK(glGetIntegerv(GL_CURRENT_PROGRAM, &buffer));
+    SE_PRECONDITION4(buffer > 0, false, GL_INVALID_OPERATION);
+
+    JSB_GL_CHECK(glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &buffer));
+    SE_PRECONDITION4(buffer > 0, false, GL_INVALID_OPERATION);
+
+    GLint elementSize = 0;
+    glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &elementSize);
+    SE_PRECONDITION4(arg1 == 0 || ((elementSize > indices) && arg1 <= ((elementSize - indices) / size)), false, GL_INVALID_OPERATION);
+#endif
+    JSB_GL_CHECK(glDrawElementsInstanced((GLenum)arg0, (GLsizei)arg1, (GLenum)arg2, (GLvoid*)arg3, (GLsizei)arg4));
+    drawCallCount++;
+    return true;
+}
+SE_BIND_FUNC(JSB_glDrawElementsInstancedANGLE)
+
+static bool JSB_glVertexAttribDivisorANGLE(se::State& s) {
+    const auto& args = s.args();
+    int argc = (int)args.size();
+    SE_PRECONDITION2(argc == 2, false, "Invalid number of arguments");
+    bool ok = true;
+    uint32_t arg0; uint32_t arg1;
+
+    ok &= seval_to_uint32(args[0], &arg0);
+    ok &= seval_to_uint32(args[1], &arg1);
+    SE_PRECONDITION2(ok, false, "Error processing arguments");
+#if OPENGL_PARAMETER_CHECK
+    int maxAttributes;
+    JSB_GL_CHECK(glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &maxAttributes));
+    SE_PRECONDITION4(arg0 < (uint32_t) maxAttributes, false, GL_INVALID_VALUE);
+#endif
+    JSB_GL_CHECK(glVertexAttribDivisor((GLuint)arg0, (GLuint)arg1));
+
+    return true;
+}
+SE_BIND_FUNC(JSB_glVertexAttribDivisorANGLE)
+
 // sequence<DOMString>? getSupportedExtensions();
 static bool JSB_glGetSupportedExtensions(se::State& s) {
     const auto& args = s.args();
@@ -4168,6 +4312,7 @@ static bool JSB_glGetSupportedExtensions(se::State& s) {
     size_t start_extension = 0;
     uint32_t element = 0;
     bool add = false;
+    bool supportedInstancedExt = false;
     for( size_t i=0; i<len+1; i++) {
         if( copy[i]==' ' || copy[i]==',' || i==len ) {
             copy[i] = 0;
@@ -4188,11 +4333,23 @@ static bool JSB_glGetSupportedExtensions(se::State& s) {
                 extensionName = "WEBGL_compressed_texture_pvrtc";
                 add = true;
             }
-            else if (0 == strcmp(extensionName, "GL_OES_vertex_array_object") && glGenVertexArrays != nullptr &&
-                     glBindVertexArray != nullptr && glDeleteVertexArrays != nullptr && glIsVertexArray != nullptr)
+            else if (0 == strcmp(extensionName, "GL_OES_vertex_array_object")
+                     && glGenVertexArrays != nullptr
+                     && glBindVertexArray != nullptr
+                     && glDeleteVertexArrays != nullptr
+                     && glIsVertexArray != nullptr)
             {
                 extensionName = "OES_vertex_array_object";
                 add = true;
+            }
+            else if(0 == strcmp(extensionName, "GL_EXT_draw_instanced")
+                    && glVertexAttribDivisor != nullptr
+                    && glDrawArraysInstanced != nullptr
+                    && glDrawElementsInstanced != nullptr)
+            {
+                extensionName = "ANGLE_instanced_arrays";
+                add = true;
+                supportedInstancedExt = true;
             }
 
             if (add)
@@ -4205,6 +4362,13 @@ static bool JSB_glGetSupportedExtensions(se::State& s) {
             start_extension = i+1;
             ++i;
         }
+    }
+
+    if(!supportedInstancedExt
+       && glVertexAttribDivisor != nullptr
+       && glDrawArraysInstanced != nullptr
+       && glDrawElementsInstanced != nullptr) {
+        jsobj->setArrayElement(element, se::Value("ANGLE_instanced_arrays"));
     }
 
     s.rval().setObject(jsobj.get());
@@ -4269,6 +4433,19 @@ static bool JSB_glGetExtension(se::State& s) {
             __gl_compressed_texture_pvrtc_obj->setProperty("COMPRESSED_RGBA_PVRTC_2BPPV1_IMG", se::Value(GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG));
         }
         s.rval().setObject(__gl_compressed_texture_pvrtc_obj);
+    }else if((name == "ANGLE_instanced_arrays"
+               && extensions != nullptr
+               && strstr(extensions, "GL_EXT_draw_instanced"))
+             || (glVertexAttribDivisor != nullptr
+                 && glDrawArraysInstanced != nullptr
+                 && glDrawElementsInstanced != nullptr))
+    {
+        if (__glANGLE_instanced == nullptr)
+        {
+            __glANGLE_instanced = se::Object::createObjectWithClass(__jsb_ANGLE_instanced_arrays_class);
+            __glANGLE_instanced->root();
+        }
+        s.rval().setObject(__glANGLE_instanced);
     }
     // add other extension
 
@@ -5785,6 +5962,13 @@ bool JSB_register_opengl(se::Object* obj)
     __jsb_OES_vertex_array_object_class->defineProperty("VERTEX_ARRAY_BINDING_OES", _SE(JSB_getVERTEX_ARRAY_BINDING_OES), nullptr);
     __jsb_OES_vertex_array_object_class->install();
 
+    __jsb_ANGLE_instanced_arrays_class = se::Class::create("ANGLE_instanced_arrays", obj, nullptr, _SE(JSB_glANGLE_instanced_arrays_constructor));
+    __jsb_ANGLE_instanced_arrays_class->defineFunction("drawArraysInstancedANGLE", _SE(JSB_glDrawArraysInstancedANGLE));
+    __jsb_ANGLE_instanced_arrays_class->defineFunction("drawElementsInstancedANGLE", _SE(JSB_glDrawElementsInstancedANGLE));
+    __jsb_ANGLE_instanced_arrays_class->defineFunction("vertexAttribDivisorANGLE", _SE(JSB_glVertexAttribDivisorANGLE));
+    __jsb_ANGLE_instanced_arrays_class->defineProperty("VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE", _SE(JSB_getVERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE), nullptr);
+    __jsb_ANGLE_instanced_arrays_class->install();
+
     // New WebGL functions, not present on OpenGL ES 2.0
     __glObj->defineFunction("getSupportedExtensions", _SE(JSB_glGetSupportedExtensions));
     __glObj->defineFunction("getExtension", _SE(JSB_glGetExtension));
@@ -5945,6 +6129,13 @@ bool JSB_register_opengl(se::Object* obj)
             __glVAOObj->decRef();
             __glVAOObj = nullptr;
         }
+
+        if(__glANGLE_instanced != nullptr) {
+            __glANGLE_instanced->unroot();
+            __glANGLE_instanced->decRef();
+            __glANGLE_instanced = nullptr;
+        }
+
         ccClearVaoMap();
         if (__gl_compressed_texture_etc1_obj != nullptr)
         {
