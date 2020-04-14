@@ -3394,7 +3394,7 @@ static bool JSB_glGetVertexAttrib(se::State& s)
     else if( pname == GL_CURRENT_VERTEX_ATTRIB ) {
         float vertexAttrib[4] = {0.0f};
         JSB_GL_CHECK(glGetVertexAttribfv(index, pname, vertexAttrib));
-        se::Object* arr = se::Object::createTypedArray(se::Object::TypedArrayType::FLOAT32, vertexAttrib, sizeof(vertexAttrib));
+        se::HandleObject arr(se::Object::createTypedArray(se::Object::TypedArrayType::FLOAT32, vertexAttrib, sizeof(vertexAttrib)));
         s.rval().setObject(arr);
     }
     else {
