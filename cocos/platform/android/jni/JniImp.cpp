@@ -257,9 +257,9 @@ extern "C"
             if (dtSum >= SAMPLE_TIME)
             {
                 float FPS = jsbInvocationTotalFrames / dtSum;
-                if(FPS > 99.9)
+                if(FPS > 999.9)
                 {
-                    FPS = 99.9;
+                    FPS = 999.9;
                 }
 
                 int jsbCount = jsbInvocationTotalCount  / jsbInvocationTotalFrames;
@@ -269,13 +269,12 @@ extern "C"
                 }
 
                 int drawCount = drawCallCount  / jsbInvocationTotalFrames;
-                if(drawCount > 999)
+                if(drawCount > 99999)
                 {
-                    drawCount = 999;
+                    drawCount = 99999;
                 }
-
                 char info[50] = {0};
-                sprintf(info, "[FPS]%4.1f [Draw Call]%3d [JSB Call]%3d",
+                sprintf(info, "[FPS]%5.1f [Draw Call]%5d [JSB Call]%3d",
                         FPS, drawCount, jsbCount);
                 setDrawCallAndJSTimeJNI(info);
                 drawCallCount = 0;
