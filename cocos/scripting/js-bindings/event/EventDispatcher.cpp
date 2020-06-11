@@ -273,12 +273,12 @@ void EventDispatcher::dispatchTickEvent(float dt)
         se::ScriptEngine::getInstance()->getGlobalObject()->getProperty("gameTick", &_tickVal);
     }
 
-    static std::chrono::steady_clock::time_point prevTime;
-    prevTime = std::chrono::steady_clock::now();
+    struct timespec now = {0, 0};
+    clock_gettime(CLOCK_MONOTONIC, &now);
 
     se::ValueArray args;
-    long long microSeconds = std::chrono::duration_cast<std::chrono::microseconds>(prevTime - se::ScriptEngine::getInstance()->getStartTime()).count();
-    args.push_back(se::Value((double)(microSeconds * 0.001)));
+    long long microSeconds = 1000000 * now.tv_sec + now.tv_nsec / 1000 - se::ScriptEngine::getInstance()->getStartTime();
+    args.push_back(se::Value((microSeconds * 0.001)));
     _tickVal.toObject()->call(args, nullptr);
 }
 

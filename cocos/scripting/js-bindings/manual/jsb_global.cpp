@@ -712,9 +712,11 @@ static bool getOrCreatePlainObject_r(const char* name, se::Object* parent, se::O
 
 static bool js_performance_now(se::State& s)
 {
-    auto now = std::chrono::steady_clock::now();
-    auto micro = std::chrono::duration_cast<std::chrono::microseconds>(now - se::ScriptEngine::getInstance()->getStartTime()).count();
-    s.rval().setNumber((double)micro * 0.001);
+    struct timespec now = {0, 0};
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    auto micro = 1000000 * now.tv_sec + now.tv_nsec / 1000 - se::ScriptEngine::getInstance()->getStartTime();
+    s.rval().setNumber(micro * 0.001);
+
     return true;
 }
 SE_BIND_FUNC(js_performance_now)

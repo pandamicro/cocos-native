@@ -198,6 +198,7 @@ extern "C"
             return;
         }
 
+        static struct timespec prevTime = {0, 0};
 
         if (!g_isStarted)
         {
@@ -224,12 +225,13 @@ extern "C"
             }
 
             g_isStarted = true;
+            clock_gettime(CLOCK_MONOTONIC, &prevTime);
         }
 
-        static std::chrono::steady_clock::time_point prevTime = std::chrono::steady_clock::now();;
-        static std::chrono::steady_clock::time_point now;
+        static struct timespec now = {0, 0};
         static float dt = 0.f;
         static float dtSum = 0.f;
+
         static uint32_t jsbInvocationTotalCount = 0;
         static uint32_t jsbInvocationTotalFrames = 0;
         bool downsampleEnabled = g_app->isDownsampleEnabled();
@@ -239,15 +241,16 @@ extern "C"
 
         g_app->getScheduler()->update(dt);
         EventDispatcher::dispatchTickEvent(dt);
-       
+
         if (downsampleEnabled)
             g_app->getRenderTexture()->draw();
 
         PoolManager::getInstance()->getCurrentPool()->clear();
 
-        now = std::chrono::steady_clock::now();
-        dt = std::chrono::duration_cast<std::chrono::microseconds>(now - prevTime).count() / 1000000.f;
-        prevTime = std::chrono::steady_clock::now();
+        clock_gettime(CLOCK_MONOTONIC, &now);
+        dt = (1000000000 * (now.tv_sec - prevTime.tv_sec) + (now.tv_nsec - prevTime.tv_nsec)) / 1000000000.0f;
+        prevTime = now;
+
         if (__isOpenDebugView)
         {
             dtSum += dt;

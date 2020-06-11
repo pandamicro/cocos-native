@@ -951,7 +951,9 @@ namespace se {
         }
 
         bool ok = false;
-        _startTime = std::chrono::steady_clock::now();
+        struct timespec now = {0, 0};
+        clock_gettime(CLOCK_MONOTONIC, &now);
+        _startTime = 1000000 * now.tv_sec + now.tv_nsec / 1000;
 
         for (auto cb : _registerCallbackArray)
         {

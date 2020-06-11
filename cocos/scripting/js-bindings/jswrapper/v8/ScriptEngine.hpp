@@ -261,9 +261,9 @@ namespace se {
 
         /**
          *  @brief Gets the start time of script engine.
-         *  @return The start time of script engine.
+         *  @return The start time of script engine.Time accuracy in microseconds.
          */
-        const std::chrono::steady_clock::time_point& getStartTime() const { return _startTime; }
+        const long long getStartTime() const { return _startTime; }
 
         /**
          *  @brief Enables JavaScript debugger
@@ -304,7 +304,6 @@ namespace se {
         static void onOOMErrorCallback(const char* location, bool is_heap_oom);
         static void onMessageCallback(v8::Local<v8::Message> message, v8::Local<v8::Value> data);
 
-        std::chrono::steady_clock::time_point _startTime;
         std::vector<RegisterCallback> _registerCallbackArray;
         std::vector<std::function<void()>> _beforeInitHookArray;
         std::vector<std::function<void()>> _afterInitHookArray;
@@ -338,6 +337,8 @@ namespace se {
         bool _isGarbageCollecting;
         bool _isInCleanup;
         bool _isErrorHandleWorking;
+
+        long long _startTime;
     };
 
 } // namespace se {

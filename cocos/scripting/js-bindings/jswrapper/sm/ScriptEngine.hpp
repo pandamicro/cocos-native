@@ -233,9 +233,9 @@ namespace se {
 
         /**
          *  @brief Gets the start time of script engine.
-         *  @return The start time of script engine.
+         *  @return The start time of script engine.Time accuracy in microseconds.
          */
-        const std::chrono::steady_clock::time_point& getStartTime() const { return _startTime; }
+        const long long getStartTime() const { return _startTime; }
 
         /**
          *  @brief Enables JavaScript debugger
@@ -285,7 +285,6 @@ namespace se {
         FileOperationDelegate _fileOperationDelegate;
 
         std::vector<RegisterCallback> _registerCallbackArray;
-        std::chrono::steady_clock::time_point _startTime;
 
         std::vector<std::function<void()>> _beforeInitHookArray;
         std::vector<std::function<void()>> _afterInitHookArray;
@@ -306,6 +305,8 @@ namespace se {
         bool _isValid;
         bool _isInCleanup;
         bool _isErrorHandleWorking;
+
+        long long _startTime;
     };
 
  } // namespace se {
