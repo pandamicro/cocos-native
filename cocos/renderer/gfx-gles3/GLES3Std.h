@@ -1,5 +1,4 @@
-#ifndef __CC_GFXGLES3_STD_H__
-#define __CC_GFXGLES3_STD_H__
+#pragma once
 
 #include <Core.h>
 
@@ -15,6 +14,4 @@
     #endif
 #else
     #define CC_GLES3_API
-#endif
-
 #endif

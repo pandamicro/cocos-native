@@ -1,9 +1,11 @@
 #include "MTLStd.h"
 
+#import <Metal/Metal.h>
+#import <Foundation/Foundation.h>
+
 #include "MTLBuffer.h"
 #include "MTLDevice.h"
 #include "MTLUtils.h"
-#import <Metal/Metal.h>
 
 namespace cc {
 namespace gfx {

@@ -1,5 +1,4 @@
-#ifndef CC_CORE_CORE_H_
-#define CC_CORE_CORE_H_
+#pragma once
 
 #include "CoreStd.h"
 
@@ -26,5 +25,3 @@
 #include "gfx/GFXQueue.h"
 #include "gfx/GFXCommand.h"
 #include "gfx/GFXCommandPool.h"
-
-#endif // CC_CORE_CORE_H_

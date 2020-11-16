@@ -2,6 +2,23 @@ set(TARGET_NAME Core)
 
 message(STATUS "Target: ${TARGET_NAME}...")
 
+# ---------------------------------------------
+# set cocos base files
+
+set(CC_BASE_HEADERS
+    ${COCOS_SRC_PATH}/base/TypeDef.h
+    ${COCOS_SRC_PATH}/base/Log.h
+    ${COCOS_SRC_PATH}/base/Object.h
+    ${COCOS_SRC_PATH}/base/memory/Memory.h
+    ${COCOS_SRC_PATH}/math/Math.h
+)
+
+set(CC_BASE_SOURCES
+    ${COCOS_SRC_PATH}/base/Log.cpp
+    ${COCOS_SRC_PATH}/base/memory/Memory.cpp
+    ${COCOS_SRC_PATH}/math/Math.cpp
+)
+
 # ---------------------------------------------------------------------
 # set include files
 
@@ -81,7 +98,13 @@ macro(GROUP_FILES src_files out_del_files)
 	set(${out_del_files} ${del_files})
 endmacro(GROUP_FILES)
 
-set(ALL_FILES ${HEADER_FILES} ${SOURCE_CPP_FILES} ${SOURCE_C_FILES})
+set(ALL_FILES
+	${CC_BASE_HEADERS}
+	${CC_BASE_SOURCES}
+	${HEADER_FILES}
+	${SOURCE_CPP_FILES}
+	${SOURCE_C_FILES}
+)
 if(COCOS_PLATFORM_IOS)
 	set(ALL_FILES ${ALL_FILES} ${SOURCE_MM_FILES})
 	set(ALL_FILES ${ALL_FILES} ${SOURCE_M_FILES})
@@ -104,9 +127,9 @@ if(COCOS_UNICODE)
 endif()
 
 if (COCOS_STATIC)
-	add_library(${TARGET_NAME} STATIC ${HEADER_FILES} ${SOURCE_CPP_FILES} ${SOURCE_C_FILES})
+	add_library(${TARGET_NAME} STATIC ${CC_BASE_HEADERS} ${CC_BASE_SOURCES} ${HEADER_FILES} ${SOURCE_CPP_FILES} ${SOURCE_C_FILES})
 else()
-	add_library(${TARGET_NAME} SHARED ${HEADER_FILES} ${SOURCE_CPP_FILES} ${SOURCE_C_FILES})
+	add_library(${TARGET_NAME} SHARED ${CC_BASE_HEADERS} ${CC_BASE_SOURCES} ${HEADER_FILES} ${SOURCE_CPP_FILES} ${SOURCE_C_FILES})
 endif()
 
 if (COCOS_PLATFORM_WIN32)
@@ -135,6 +158,7 @@ target_include_directories(${TARGET_NAME} PUBLIC
 	${COCOS_SRC_PATH}/renderer
 	${COCOS_SRC_PATH}
 	${COCOS_SRC_PATH}/..
+	${COCOS_SRC_PATH}/base
 	${COCOS_EXTERNAL_INCLUDE_PATH}
 )
 
