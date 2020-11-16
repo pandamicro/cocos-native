@@ -6,6 +6,8 @@
 #include "base/CachedArray.h"
 #include "base/StringUtil.h"
 
+#include "Thread/ThreadPool.h"
+
 #include "gfx/GFXDevice.h"
 #include "gfx/GFXContext.h"
 #include "gfx/GFXBuffer.h"

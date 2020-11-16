@@ -278,10 +278,10 @@ bool CCVKContext::initialize(const ContextInfo &info) {
             if (_gpuContext && _gpuContext->vkSurface != VK_NULL_HANDLE) {
 
                 CCVKDevice* device = (CCVKDevice*)_device;
-                CCVKQueue *queue = (CCVKQueue *)device->_queue;
+                CCVKQueue *queue = (CCVKQueue *)device->getQueue();
 
                 if (!queue->gpuQueue()->fences.empty()) {
-                    VK_CHECK(vkWaitForFences(device->_gpuDevice->vkDevice, queue->gpuQueue()->fences.size(),
+                    VK_CHECK(vkWaitForFences(device->gpuDevice()->vkDevice, queue->gpuQueue()->fences.size(),
                                              queue->gpuQueue()->fences.data(), VK_TRUE, DEFAULT_TIMEOUT));
                     queue->gpuQueue()->fences.clear();
                 }

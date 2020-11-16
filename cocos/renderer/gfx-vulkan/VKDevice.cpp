@@ -320,7 +320,7 @@ bool CCVKDevice::initialize(const DeviceInfo &info) {
     _gpuDevice->defaultBuffer.size = _gpuDevice->defaultBuffer.stride = 16u;
     _gpuDevice->defaultBuffer.count = 1u;
     CCVKCmdFuncCreateBuffer(this, &_gpuDevice->defaultBuffer);
-    
+
     VkPipelineCacheCreateInfo pipelineCacheInfo{VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO};
     VK_CHECK(vkCreatePipelineCache(_gpuDevice->vkDevice, &pipelineCacheInfo, nullptr, &_gpuDevice->vkPipelineCache));
 
@@ -469,6 +469,11 @@ void CCVKDevice::acquire() {
     queue->gpuQueue()->nextWaitSemaphore = VK_NULL_HANDLE;
     queue->gpuQueue()->nextSignalSemaphore = VK_NULL_HANDLE;
 
+    _gpuSemaphorePool->reset();
+    VkSemaphore acquireSemaphore = _gpuSemaphorePool->alloc();
+    VK_CHECK(vkAcquireNextImageKHR(_gpuDevice->vkDevice, _gpuSwapchain->vkSwapchain, ~0ull,
+                                   acquireSemaphore, VK_NULL_HANDLE, &_gpuSwapchain->curImageIndex));
+
     // reset everything only when no pending commands
     if (_gpuTransportHub->empty() && !((CCVKCommandBuffer *)_cmdBuff)->gpuCommandBuffer()->began) {
         _gpuFencePool->reset();
@@ -477,11 +482,6 @@ void CCVKDevice::acquire() {
         _gpuCommandBufferPool->reset();
         _gpuStagingBufferPool->reset();
     }
-
-    _gpuSemaphorePool->reset();
-    VkSemaphore acquireSemaphore = _gpuSemaphorePool->alloc();
-    VK_CHECK(vkAcquireNextImageKHR(_gpuDevice->vkDevice, _gpuSwapchain->vkSwapchain, ~0ull,
-                                   acquireSemaphore, VK_NULL_HANDLE, &_gpuSwapchain->curImageIndex));
 
     queue->gpuQueue()->nextWaitSemaphore = acquireSemaphore;
     queue->gpuQueue()->nextSignalSemaphore = _gpuSemaphorePool->alloc();

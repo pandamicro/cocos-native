@@ -8,6 +8,7 @@ set(INCLUDE_FILES
   ${GFX_EXTERNAL_PATH}/khronos
   ${GFX_EXTERNAL_PATH}/glsl_optimizer/src
   ${GFX_EXTERNAL_PATH}/glsl_optimizer/src/mesa
+  ${GFX_EXTERNAL_PATH}/boost
   ${COCOS_SRC_PATH}/renderer/core
   ${COCOS_SRC_PATH}/renderer/gfx-gles3
 )
@@ -50,7 +51,7 @@ if(COCOS_PLATFORM_IOS OR COCOS_PLATFORM_OSX)
 else()
 	list(REMOVE_ITEM ALL_FILES "${COCOS_SRC_PATH}/renderer/gfx-gles3/gles3w.mm")
 endif()
-	
+
 add_definitions("-DCC_GLES3_EXPORTS")
 if(WIN32)
 	add_definitions("-DGLEW_BUILD")
@@ -72,4 +73,4 @@ set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME_DEBUG CCGFXGLES3_d)
 
 use_precompiled_header("${CMAKE_CURRENT_SOURCE_DIR}/GLES3Std.h" "${CMAKE_CURRENT_SOURCE_DIR}/GLES3Std.cpp" SOURCE_CPP_FILES)
 
-message(STATUS "${TARGET_NAME} configuration completed.") 
+message(STATUS "${TARGET_NAME} configuration completed.")
