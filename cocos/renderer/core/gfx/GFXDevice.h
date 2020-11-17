@@ -41,22 +41,25 @@ public:
         copyBuffersToTexture(buffers.data(), dst, regions.data(), static_cast<uint>(regions.size()) );
     }
 
+    virtual SurfaceTransform getSurfaceTransform() const { return _transform; }
+    virtual uint getWidth() const { return _width; }
+    virtual uint getHeight() const { return _height; }
+    virtual uint getNativeWidth() const { return _nativeWidth; }
+    virtual uint getNativeHeight() const { return _nativeHeight; }
+    virtual MemoryStatus &getMemoryStatus() { return _memoryStatus; }
+    virtual uint getNumDrawCalls() const { return _numDrawCalls; }
+    virtual uint getNumInstances() const { return _numInstances; }
+    virtual uint getNumTris() const { return _numTriangles; }
+
+    Format getColorFormat() const;
+    Format getDepthStencilFormat() const;
     CC_INLINE API getGfxAPI() const { return _API; }
-    CC_INLINE SurfaceTransform getSurfaceTransform() const { return _transform; }
     CC_INLINE const String &getDeviceName() const { return _deviceName; }
-    CC_INLINE uint getWidth() { return _width; }
-    CC_INLINE uint getHeight() { return _height; }
-    CC_INLINE uint getNativeWidth() { return _nativeWidth; }
-    CC_INLINE uint getNativeHeight() { return _nativeHeight; }
-    CC_INLINE MemoryStatus &getMemoryStatus() { return _memoryStatus; }
     CC_INLINE Context *getContext() const { return _context; }
     CC_INLINE Queue *getQueue() const { return _queue; }
     CC_INLINE CommandBuffer *getCommandBuffer() const { return _cmdBuff; }
     CC_INLINE const String &getRenderer() const { return _renderer; }
     CC_INLINE const String &getVendor() const { return _vendor; }
-    CC_INLINE uint getNumDrawCalls() const { return _numDrawCalls; }
-    CC_INLINE uint getNumInstances() const { return _numInstances; }
-    CC_INLINE uint getNumTris() const { return _numTriangles; }
     CC_INLINE int getMaxVertexAttributes() const { return _maxVertexAttributes; }
     CC_INLINE int getMaxVertexUniformVectors() const { return _maxVertexUniformVectors; }
     CC_INLINE int getMaxFragmentUniformVectors() const { return _maxFragmentUniformVectors; }
@@ -69,11 +72,7 @@ public:
     CC_INLINE int getUboOffsetAlignment() const { return _uboOffsetAlignment; }
     CC_INLINE int getDepthBits() const { return _depthBits; }
     CC_INLINE int getStencilBits() const { return _stencilBits; }
-    CC_INLINE uint getShaderIdGen() { return _shaderIdGen++; }
-    Format getColorFormat() const;
-    Format getDepthStencilFormat() const;
     CC_INLINE bool hasFeature(Feature feature) const { return _features[static_cast<uint8_t>(feature)]; }
-    CC_INLINE void defineMacro(const String &macro, const String &value) { _macros[macro] = value; }
     CC_INLINE float getClipSpaceMinZ() const { return _clipSpaceMinZ; }
     CC_INLINE float getScreenSpaceSignY() const { return _screenSpaceSignY; }
     CC_INLINE float getUVSpaceSignY() const { return _UVSpaceSignY; }

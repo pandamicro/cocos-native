@@ -55,9 +55,10 @@ public:
     CC_INLINE Device *getDevice() const { return _device; }
     CC_INLINE Queue *getQueue() const { return _queue; }
     CC_INLINE CommandBufferType getType() const { return _type; }
-    CC_INLINE uint getNumDrawCalls() const { return _numDrawCalls; }
-    CC_INLINE uint getNumInstances() const { return _numInstances; }
-    CC_INLINE uint getNumTris() const { return _numTriangles; }
+
+    virtual uint getNumDrawCalls() const { return _numDrawCalls; }
+    virtual uint getNumInstances() const { return _numInstances; }
+    virtual uint getNumTris() const { return _numTriangles; }
 
 protected:
     Device *_device = nullptr;
