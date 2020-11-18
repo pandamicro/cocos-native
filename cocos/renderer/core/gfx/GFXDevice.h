@@ -2,6 +2,20 @@
 #define CC_CORE_GFX_DEVICE_H_
 
 #include "GFXDef.h"
+#include "GFXFence.h"
+#include "GFXQueue.h"
+#include "GFXSampler.h"
+#include "GFXInputAssembler.h"
+#include "GFXRenderPass.h"
+#include "GFXFramebuffer.h"
+#include "GFXDescriptorSetLayout.h"
+#include "GFXPipelineLayout.h"
+#include "GFXPipelineState.h"
+#include "GFXCommandBuffer.h"
+#include "GFXDescriptorSet.h"
+#include "GFXBuffer.h"
+#include "GFXTexture.h"
+#include "GFXShader.h"
 
 namespace cc {
 namespace gfx {
@@ -11,32 +25,47 @@ public:
     static Device *getInstance();
 
     Device();
+    Device(Device* device): Device() {}
     virtual ~Device();
 
-public:
     virtual bool initialize(const DeviceInfo &info) = 0;
     virtual void destroy() = 0;
     virtual void resize(uint width, uint height) = 0;
     virtual void acquire() = 0;
     virtual void present() = 0;
-    virtual CommandBuffer *createCommandBuffer(const CommandBufferInfo &info) = 0;
-    virtual Fence *createFence(const FenceInfo &info) = 0;
-    virtual Queue *createQueue(const QueueInfo &info) = 0;
-    virtual Buffer *createBuffer(const BufferInfo &info) = 0;
-    virtual Buffer *createBuffer(const BufferViewInfo &info) = 0;
-    virtual Texture *createTexture(const TextureInfo &info) = 0;
-    virtual Texture *createTexture(const TextureViewInfo &info) = 0;
-    virtual Sampler *createSampler(const SamplerInfo &info) = 0;
-    virtual Shader *createShader(const ShaderInfo &info) = 0;
-    virtual InputAssembler *createInputAssembler(const InputAssemblerInfo &info) = 0;
-    virtual RenderPass *createRenderPass(const RenderPassInfo &info) = 0;
-    virtual Framebuffer *createFramebuffer(const FramebufferInfo &info) = 0;
-    virtual DescriptorSet *createDescriptorSet(const DescriptorSetInfo &info) = 0;
-    virtual DescriptorSetLayout *createDescriptorSetLayout(const DescriptorSetLayoutInfo &info) = 0;
-    virtual PipelineLayout *createPipelineLayout(const PipelineLayoutInfo &info) = 0;
-    virtual PipelineState *createPipelineState(const PipelineStateInfo &info) = 0;
+
+    virtual CommandBuffer *createCommandBuffer() = 0;
+    virtual Fence *createFence() = 0;
+    virtual Queue *createQueue() = 0;
+    virtual Buffer *createBuffer() = 0;
+    virtual Texture *createTexture() = 0;
+    virtual Sampler *createSampler() = 0;
+    virtual Shader *createShader() = 0;
+    virtual InputAssembler *createInputAssembler() = 0;
+    virtual RenderPass *createRenderPass() = 0;
+    virtual Framebuffer *createFramebuffer() = 0;
+    virtual DescriptorSet *createDescriptorSet() = 0;
+    virtual DescriptorSetLayout *createDescriptorSetLayout() = 0;
+    virtual PipelineLayout *createPipelineLayout() = 0;
+    virtual PipelineState *createPipelineState() = 0;
     virtual void copyBuffersToTexture(const uint8_t *const *buffers, Texture *dst, const BufferTextureCopy *regions, uint count) = 0;
 
+    CC_INLINE CommandBuffer *createCommandBuffer(const CommandBufferInfo &info) { CommandBuffer *res = createCommandBuffer(); res->initialize(info); return res; }
+    CC_INLINE Fence *createFence(const FenceInfo &info) { Fence *res = createFence(); res->initialize(info); return res; }
+    CC_INLINE Queue *createQueue(const QueueInfo &info) { Queue *res = createQueue(); res->initialize(info); return res; }
+    CC_INLINE Buffer *createBuffer(const BufferInfo &info) { Buffer *res = createBuffer(); res->initialize(info); return res; }
+    CC_INLINE Buffer *createBuffer(const BufferViewInfo &info) { Buffer *res = createBuffer(); res->initialize(info); return res; }
+    CC_INLINE Texture *createTexture(const TextureInfo &info) { Texture *res = createTexture(); res->initialize(info); return res; }
+    CC_INLINE Texture *createTexture(const TextureViewInfo &info) { Texture *res = createTexture(); res->initialize(info); return res; }
+    CC_INLINE Sampler *createSampler(const SamplerInfo &info) { Sampler *res = createSampler(); res->initialize(info); return res; }
+    CC_INLINE Shader *createShader(const ShaderInfo &info) { Shader *res = createShader(); res->initialize(info); return res; }
+    CC_INLINE InputAssembler *createInputAssembler(const InputAssemblerInfo &info) { InputAssembler *res = createInputAssembler(); res->initialize(info); return res; }
+    CC_INLINE RenderPass *createRenderPass(const RenderPassInfo &info) { RenderPass *res = createRenderPass(); res->initialize(info); return res; }
+    CC_INLINE Framebuffer *createFramebuffer(const FramebufferInfo &info) { Framebuffer *res = createFramebuffer(); res->initialize(info); return res; }
+    CC_INLINE DescriptorSet *createDescriptorSet(const DescriptorSetInfo &info) { DescriptorSet *res = createDescriptorSet(); res->initialize(info); return res; }
+    CC_INLINE DescriptorSetLayout *createDescriptorSetLayout(const DescriptorSetLayoutInfo &info) { DescriptorSetLayout *res = createDescriptorSetLayout(); res->initialize(info); return res; }
+    CC_INLINE PipelineLayout *createPipelineLayout(const PipelineLayoutInfo &info) { PipelineLayout *res = createPipelineLayout(); res->initialize(info); return res; }
+    CC_INLINE PipelineState *createPipelineState(const PipelineStateInfo &info) { PipelineState *res = createPipelineState(); res->initialize(info); return res; }
     CC_INLINE void copyBuffersToTexture(const BufferDataList &buffers, Texture *dst, const BufferTextureCopyList &regions) {
         copyBuffersToTexture(buffers.data(), dst, regions.data(), static_cast<uint>(regions.size()) );
     }
@@ -50,10 +79,6 @@ public:
     virtual uint getNumDrawCalls() const { return _numDrawCalls; }
     virtual uint getNumInstances() const { return _numInstances; }
     virtual uint getNumTris() const { return _numTriangles; }
-
-    // TODO: device proxy hack, remove this
-    Device(Device *device): Device() {};
-    CC_INLINE Device *getDevice() const { return (Device*)this; }
 
     Format getColorFormat() const;
     Format getDepthStencilFormat() const;

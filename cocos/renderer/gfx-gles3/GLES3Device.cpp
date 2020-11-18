@@ -151,8 +151,15 @@ bool GLES3Device::initialize(const DeviceInfo &info) {
 }
 
 void GLES3Device::destroy() {
-    CC_SAFE_DESTROY(_queue);
-    CC_SAFE_DESTROY(_cmdBuff);
+    // these two are managed by their proxies
+    if (_queue) {
+        _queue->destroy();
+        _queue = nullptr;
+    }
+    if (_cmdBuff) {
+        _cmdBuff->destroy();
+        _cmdBuff = nullptr;
+    }
     CC_SAFE_DESTROY(_context);
     CC_SAFE_DELETE(_gpuStagingBufferPool);
     CC_SAFE_DELETE(_gpuCmdAllocator);
@@ -182,148 +189,60 @@ void GLES3Device::present() {
     queue->_numTriangles = 0;
 }
 
-CommandBuffer *GLES3Device::createCommandBuffer(const CommandBufferInfo &info) {
-    CommandBuffer *cmd_buff = CC_NEW(GLES3CommandBuffer(this));
-    if (cmd_buff->initialize(info))
-        return cmd_buff;
-
-    CC_SAFE_DESTROY(cmd_buff)
-    return nullptr;
+CommandBuffer *GLES3Device::createCommandBuffer() {
+    return CC_NEW(GLES3CommandBuffer(this));
 }
 
-Fence *GLES3Device::createFence(const FenceInfo &info) {
-    Fence *fence = CC_NEW(GLES3Fence(this));
-    if (fence->initialize(info))
-        return fence;
-
-    CC_SAFE_DESTROY(fence);
-    return nullptr;
+Fence *GLES3Device::createFence() {
+    return CC_NEW(GLES3Fence(this));
 }
 
-Queue *GLES3Device::createQueue(const QueueInfo &info) {
-    Queue *queue = CC_NEW(GLES3Queue(this));
-    if (queue->initialize(info))
-        return queue;
-
-    CC_SAFE_DESTROY(queue);
-    return nullptr;
+Queue *GLES3Device::createQueue() {
+    return CC_NEW(GLES3Queue(this));
 }
 
-Buffer *GLES3Device::createBuffer(const BufferInfo &info) {
-    Buffer *buffer = CC_NEW(GLES3Buffer(this));
-    if (buffer->initialize(info))
-        return buffer;
-
-    CC_SAFE_DESTROY(buffer);
-    return nullptr;
+Buffer *GLES3Device::createBuffer() {
+    return CC_NEW(GLES3Buffer(this));
 }
 
-Buffer *GLES3Device::createBuffer(const BufferViewInfo &info) {
-    Buffer *buffer = CC_NEW(GLES3Buffer(this));
-    if (buffer->initialize(info))
-        return buffer;
-
-    CC_SAFE_DESTROY(buffer);
-    return nullptr;
+Texture *GLES3Device::createTexture() {
+    return CC_NEW(GLES3Texture(this));
 }
 
-Texture *GLES3Device::createTexture(const TextureInfo &info) {
-    Texture *texture = CC_NEW(GLES3Texture(this));
-    if (texture->initialize(info))
-        return texture;
-
-    CC_SAFE_DESTROY(texture);
-    return nullptr;
+Sampler *GLES3Device::createSampler() {
+    return CC_NEW(GLES3Sampler(this));
 }
 
-Texture *GLES3Device::createTexture(const TextureViewInfo &info) {
-    Texture *texture = CC_NEW(GLES3Texture(this));
-    if (texture->initialize(info))
-        return texture;
-
-    CC_SAFE_DESTROY(texture);
-    return nullptr;
+Shader *GLES3Device::createShader() {
+    return CC_NEW(GLES3Shader(this));
 }
 
-Sampler *GLES3Device::createSampler(const SamplerInfo &info) {
-    Sampler *sampler = CC_NEW(GLES3Sampler(this));
-    if (sampler->initialize(info))
-        return sampler;
-
-    CC_SAFE_DESTROY(sampler);
-    return nullptr;
+InputAssembler *GLES3Device::createInputAssembler() {
+    return CC_NEW(GLES3InputAssembler(this));
 }
 
-Shader *GLES3Device::createShader(const ShaderInfo &info) {
-    Shader *shader = CC_NEW(GLES3Shader(this));
-    if (shader->initialize(info))
-        return shader;
-
-    CC_SAFE_DESTROY(shader);
-    return nullptr;
+RenderPass *GLES3Device::createRenderPass() {
+    return CC_NEW(GLES3RenderPass(this));
 }
 
-InputAssembler *GLES3Device::createInputAssembler(const InputAssemblerInfo &info) {
-    InputAssembler *inputAssembler = CC_NEW(GLES3InputAssembler(this));
-    if (inputAssembler->initialize(info))
-        return inputAssembler;
-
-    CC_SAFE_DESTROY(inputAssembler);
-    return nullptr;
+Framebuffer *GLES3Device::createFramebuffer() {
+    return CC_NEW(GLES3Framebuffer(this));
 }
 
-RenderPass *GLES3Device::createRenderPass(const RenderPassInfo &info) {
-    RenderPass *renderPass = CC_NEW(GLES3RenderPass(this));
-    if (renderPass->initialize(info))
-        return renderPass;
-
-    CC_SAFE_DESTROY(renderPass);
-    return nullptr;
+DescriptorSet *GLES3Device::createDescriptorSet() {
+    return CC_NEW(GLES3DescriptorSet(this));
 }
 
-Framebuffer *GLES3Device::createFramebuffer(const FramebufferInfo &info) {
-    Framebuffer *framebuffer = CC_NEW(GLES3Framebuffer(this));
-    if (framebuffer->initialize(info))
-        return framebuffer;
-
-    CC_SAFE_DESTROY(framebuffer);
-    return nullptr;
+DescriptorSetLayout *GLES3Device::createDescriptorSetLayout() {
+    return CC_NEW(GLES3DescriptorSetLayout(this));
 }
 
-DescriptorSet *GLES3Device::createDescriptorSet(const DescriptorSetInfo &info) {
-    DescriptorSet *descriptorSet = CC_NEW(GLES3DescriptorSet(this));
-    if (descriptorSet->initialize(info))
-        return descriptorSet;
-
-    CC_SAFE_DESTROY(descriptorSet);
-    return nullptr;
+PipelineLayout *GLES3Device::createPipelineLayout() {
+    return CC_NEW(GLES3PipelineLayout(this));
 }
 
-DescriptorSetLayout *GLES3Device::createDescriptorSetLayout(const DescriptorSetLayoutInfo &info) {
-    DescriptorSetLayout *descriptorSetLayout = CC_NEW(GLES3DescriptorSetLayout(this));
-    if (descriptorSetLayout->initialize(info))
-        return descriptorSetLayout;
-
-    CC_SAFE_DESTROY(descriptorSetLayout);
-    return nullptr;
-}
-
-PipelineLayout *GLES3Device::createPipelineLayout(const PipelineLayoutInfo &info) {
-    PipelineLayout *pipelineLayout = CC_NEW(GLES3PipelineLayout(this));
-    if (pipelineLayout->initialize(info))
-        return pipelineLayout;
-
-    CC_SAFE_DESTROY(pipelineLayout);
-    return nullptr;
-}
-
-PipelineState *GLES3Device::createPipelineState(const PipelineStateInfo &info) {
-    PipelineState *pipelineState = CC_NEW(GLES3PipelineState(this));
-    if (pipelineState->initialize(info))
-        return pipelineState;
-
-    CC_SAFE_DESTROY(pipelineState);
-    return nullptr;
+PipelineState *GLES3Device::createPipelineState() {
+    return CC_NEW(GLES3PipelineState(this));
 }
 
 void GLES3Device::copyBuffersToTexture(const uint8_t *const *buffers, Texture *dst, const BufferTextureCopy *regions, uint count) {

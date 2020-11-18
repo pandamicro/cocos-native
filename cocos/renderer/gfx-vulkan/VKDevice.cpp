@@ -394,8 +394,15 @@ void CCVKDevice::destroy() {
         _gpuRecycleBin->clear();
     }
 
-    CC_SAFE_DESTROY(_queue);
-    CC_SAFE_DESTROY(_cmdBuff);
+    // these two are managed by their proxies
+    if (_queue) {
+        _queue->destroy();
+        _queue = nullptr;
+    }
+    if (_cmdBuff) {
+        _cmdBuff->destroy();
+        _cmdBuff = nullptr;
+    }
     CC_SAFE_DELETE(_gpuSwapchain);
     CC_SAFE_DELETE(_gpuStagingBufferPool);
     CC_SAFE_DELETE(_gpuCommandBufferPool);
@@ -508,148 +515,60 @@ void CCVKDevice::present() {
     }
 }
 
-CommandBuffer *CCVKDevice::createCommandBuffer(const CommandBufferInfo &info) {
-    CommandBuffer *cmdBuff = CC_NEW(CCVKCommandBuffer(this));
-    if (cmdBuff->initialize(info))
-        return cmdBuff;
-
-    CC_SAFE_DESTROY(cmdBuff)
-    return nullptr;
+CommandBuffer *CCVKDevice::createCommandBuffer() {
+    return CC_NEW(CCVKCommandBuffer(this));
 }
 
-Fence *CCVKDevice::createFence(const FenceInfo &info) {
-    Fence *fence = CC_NEW(CCVKFence(this));
-    if (fence->initialize(info))
-        return fence;
-
-    CC_SAFE_DESTROY(fence);
-    return nullptr;
+Fence *CCVKDevice::createFence() {
+    return CC_NEW(CCVKFence(this));
 }
 
-Queue *CCVKDevice::createQueue(const QueueInfo &info) {
-    Queue *queue = CC_NEW(CCVKQueue(this));
-    if (queue->initialize(info))
-        return queue;
-
-    CC_SAFE_DESTROY(queue);
-    return nullptr;
+Queue *CCVKDevice::createQueue() {
+    return CC_NEW(CCVKQueue(this));
 }
 
-Buffer *CCVKDevice::createBuffer(const BufferInfo &info) {
-    Buffer *buffer = CC_NEW(CCVKBuffer(this));
-    if (buffer->initialize(info))
-        return buffer;
-
-    CC_SAFE_DESTROY(buffer);
-    return nullptr;
+Buffer *CCVKDevice::createBuffer() {
+    return CC_NEW(CCVKBuffer(this));
 }
 
-Buffer *CCVKDevice::createBuffer(const BufferViewInfo &info) {
-    Buffer *buffer = CC_NEW(CCVKBuffer(this));
-    if (buffer->initialize(info))
-        return buffer;
-
-    CC_SAFE_DESTROY(buffer);
-    return nullptr;
+Texture *CCVKDevice::createTexture() {
+    return CC_NEW(CCVKTexture(this));
 }
 
-Texture *CCVKDevice::createTexture(const TextureInfo &info) {
-    Texture *texture = CC_NEW(CCVKTexture(this));
-    if (texture->initialize(info))
-        return texture;
-
-    CC_SAFE_DESTROY(texture);
-    return nullptr;
+Sampler *CCVKDevice::createSampler() {
+    return CC_NEW(CCVKSampler(this));
 }
 
-Texture *CCVKDevice::createTexture(const TextureViewInfo &info) {
-    Texture *texture = CC_NEW(CCVKTexture(this));
-    if (texture->initialize(info))
-        return texture;
-
-    CC_SAFE_DESTROY(texture);
-    return nullptr;
+Shader *CCVKDevice::createShader() {
+    return CC_NEW(CCVKShader(this));
 }
 
-Sampler *CCVKDevice::createSampler(const SamplerInfo &info) {
-    Sampler *sampler = CC_NEW(CCVKSampler(this));
-    if (sampler->initialize(info))
-        return sampler;
-
-    CC_SAFE_DESTROY(sampler);
-    return nullptr;
+InputAssembler *CCVKDevice::createInputAssembler() {
+    return CC_NEW(CCVKInputAssembler(this));
 }
 
-Shader *CCVKDevice::createShader(const ShaderInfo &info) {
-    Shader *shader = CC_NEW(CCVKShader(this));
-    if (shader->initialize(info))
-        return shader;
-
-    CC_SAFE_DESTROY(shader);
-    return nullptr;
+RenderPass *CCVKDevice::createRenderPass() {
+    return CC_NEW(CCVKRenderPass(this));
 }
 
-InputAssembler *CCVKDevice::createInputAssembler(const InputAssemblerInfo &info) {
-    InputAssembler *inputAssembler = CC_NEW(CCVKInputAssembler(this));
-    if (inputAssembler->initialize(info))
-        return inputAssembler;
-
-    CC_SAFE_DESTROY(inputAssembler);
-    return nullptr;
+Framebuffer *CCVKDevice::createFramebuffer() {
+    return CC_NEW(CCVKFramebuffer(this));
 }
 
-RenderPass *CCVKDevice::createRenderPass(const RenderPassInfo &info) {
-    RenderPass *renderPass = CC_NEW(CCVKRenderPass(this));
-    if (renderPass->initialize(info))
-        return renderPass;
-
-    CC_SAFE_DESTROY(renderPass);
-    return nullptr;
+DescriptorSet *CCVKDevice::createDescriptorSet() {
+    return CC_NEW(CCVKDescriptorSet(this));
 }
 
-Framebuffer *CCVKDevice::createFramebuffer(const FramebufferInfo &info) {
-    Framebuffer *framebuffer = CC_NEW(CCVKFramebuffer(this));
-    if (framebuffer->initialize(info))
-        return framebuffer;
-
-    CC_SAFE_DESTROY(framebuffer);
-    return nullptr;
+DescriptorSetLayout *CCVKDevice::createDescriptorSetLayout() {
+    return CC_NEW(CCVKDescriptorSetLayout(this));
 }
 
-DescriptorSet *CCVKDevice::createDescriptorSet(const DescriptorSetInfo &info) {
-    DescriptorSet *descriptorSet = CC_NEW(CCVKDescriptorSet(this));
-    if (descriptorSet->initialize(info))
-        return descriptorSet;
-
-    CC_SAFE_DESTROY(descriptorSet);
-    return nullptr;
+PipelineLayout *CCVKDevice::createPipelineLayout() {
+    return CC_NEW(CCVKPipelineLayout(this));
 }
 
-DescriptorSetLayout *CCVKDevice::createDescriptorSetLayout(const DescriptorSetLayoutInfo &info) {
-    DescriptorSetLayout *descriptorSetLayout = CC_NEW(CCVKDescriptorSetLayout(this));
-    if (descriptorSetLayout->initialize(info))
-        return descriptorSetLayout;
-
-    CC_SAFE_DESTROY(descriptorSetLayout);
-    return nullptr;
-}
-
-PipelineLayout *CCVKDevice::createPipelineLayout(const PipelineLayoutInfo &info) {
-    PipelineLayout *pipelineLayout = CC_NEW(CCVKPipelineLayout(this));
-    if (pipelineLayout->initialize(info))
-        return pipelineLayout;
-
-    CC_SAFE_DESTROY(pipelineLayout);
-    return nullptr;
-}
-
-PipelineState *CCVKDevice::createPipelineState(const PipelineStateInfo &info) {
-    PipelineState *pipelineState = CC_NEW(CCVKPipelineState(this));
-    if (pipelineState->initialize(info))
-        return pipelineState;
-
-    CC_SAFE_DESTROY(pipelineState);
-    return nullptr;
+PipelineState *CCVKDevice::createPipelineState() {
+    return CC_NEW(CCVKPipelineState(this));
 }
 
 void CCVKDevice::copyBuffersToTexture(const uint8_t *const *buffers, Texture *dst, const BufferTextureCopy *regions, uint count) {

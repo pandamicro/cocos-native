@@ -142,8 +142,15 @@ bool CCMTLDevice::initialize(const DeviceInfo &info) {
 }
 
 void CCMTLDevice::destroy() {
-    CC_SAFE_DESTROY(_queue);
-    CC_SAFE_DESTROY(_cmdBuff);
+    // these two are managed by their proxies
+    if (_queue) {
+        _queue->destroy();
+        _queue = nullptr;
+    }
+    if (_cmdBuff) {
+        _cmdBuff->destroy();
+        _cmdBuff = nullptr;
+    }
     CC_SAFE_DESTROY(_context);
     CC_SAFE_DELETE(_stateCache);
     CC_SAFE_DELETE(_gpuStagingBufferPool);
@@ -170,148 +177,60 @@ void CCMTLDevice::present() {
     _numTriangles = queue->_numTriangles;
 }
 
-Fence *CCMTLDevice::createFence(const FenceInfo &info) {
-    auto fence = CC_NEW(CCMTLFence(this));
-    if (fence && fence->initialize(info))
-        return fence;
-
-    CC_SAFE_DESTROY(fence);
-    return nullptr;
+Fence *CCMTLDevice::createFence() {
+    return CC_NEW(CCMTLFence(this));
 }
 
-Queue *CCMTLDevice::createQueue(const QueueInfo &info) {
-    auto queue = CC_NEW(CCMTLQueue(this));
-    if (queue && queue->initialize(info))
-        return queue;
-
-    CC_SAFE_DESTROY(queue);
-    return nullptr;
+Queue *CCMTLDevice::createQueue() {
+    return CC_NEW(CCMTLQueue(this));
 }
 
-CommandBuffer *CCMTLDevice::createCommandBuffer(const CommandBufferInfo &info) {
-    auto commandBuffer = CC_NEW(CCMTLCommandBuffer(this));
-    if (commandBuffer && commandBuffer->initialize(info))
-        return commandBuffer;
-
-    CC_SAFE_DESTROY(commandBuffer);
-    return nullptr;
+CommandBuffer *CCMTLDevice::createCommandBuffer() {
+    return CC_NEW(CCMTLCommandBuffer(this));
 }
 
-Buffer *CCMTLDevice::createBuffer(const BufferInfo &info) {
-    auto buffer = CC_NEW(CCMTLBuffer(this));
-    if (buffer && buffer->initialize(info))
-        return buffer;
-
-    CC_SAFE_DESTROY(buffer);
-    return nullptr;
+Buffer *CCMTLDevice::createBuffer() {
+    return CC_NEW(CCMTLBuffer(this));
 }
 
-Buffer *CCMTLDevice::createBuffer(const BufferViewInfo &info) {
-    auto buffer = CC_NEW(CCMTLBuffer(this));
-    if (buffer && buffer->initialize(info))
-        return buffer;
-
-    CC_SAFE_DESTROY(buffer);
-    return nullptr;
+Texture *CCMTLDevice::createTexture() {
+    return CC_NEW(CCMTLTexture(this));
 }
 
-Texture *CCMTLDevice::createTexture(const TextureInfo &info) {
-    auto texture = CC_NEW(CCMTLTexture(this));
-    if (texture && texture->initialize(info))
-        return texture;
-
-    CC_SAFE_DESTROY(texture);
-    return nullptr;
+Sampler *CCMTLDevice::createSampler() {
+    return CC_NEW(CCMTLSampler(this));
 }
 
-Texture *CCMTLDevice::createTexture(const TextureViewInfo &info) {
-    auto texture = CC_NEW(CCMTLTexture(this));
-    if (texture && texture->initialize(info))
-        return texture;
-
-    CC_SAFE_DESTROY(texture);
-    return nullptr;
+Shader *CCMTLDevice::createShader() {
+    return CC_NEW(CCMTLShader(this));
 }
 
-Sampler *CCMTLDevice::createSampler(const SamplerInfo &info) {
-    auto sampler = CC_NEW(CCMTLSampler(this));
-    if (sampler && sampler->initialize(info))
-        return sampler;
-
-    CC_SAFE_DESTROY(sampler);
-    return sampler;
+InputAssembler *CCMTLDevice::createInputAssembler() {
+    return CC_NEW(CCMTLInputAssembler(this));
 }
 
-Shader *CCMTLDevice::createShader(const ShaderInfo &info) {
-    auto shader = CC_NEW(CCMTLShader(this));
-    if (shader && shader->initialize(info))
-        return shader;
-
-    CC_SAFE_DESTROY(shader);
-    return shader;
+RenderPass *CCMTLDevice::createRenderPass() {
+    return CC_NEW(CCMTLRenderPass(this));
 }
 
-InputAssembler *CCMTLDevice::createInputAssembler(const InputAssemblerInfo &info) {
-    auto ia = CC_NEW(CCMTLInputAssembler(this));
-    if (ia && ia->initialize(info))
-        return ia;
-
-    CC_SAFE_DESTROY(ia);
-    return nullptr;
+Framebuffer *CCMTLDevice::createFramebuffer() {
+    return CC_NEW(CCMTLFramebuffer(this));
 }
 
-RenderPass *CCMTLDevice::createRenderPass(const RenderPassInfo &info) {
-    auto renderPass = CC_NEW(CCMTLRenderPass(this));
-    if (renderPass && renderPass->initialize(info))
-        return renderPass;
-
-    CC_SAFE_DESTROY(renderPass);
-    return nullptr;
+DescriptorSet *CCMTLDevice::createDescriptorSet() {
+    return CC_NEW(CCMTLDescriptorSet(this));
 }
 
-Framebuffer *CCMTLDevice::createFramebuffer(const FramebufferInfo &info) {
-    auto frameBuffer = CC_NEW(CCMTLFramebuffer(this));
-    if (frameBuffer && frameBuffer->initialize(info))
-        return frameBuffer;
-
-    CC_SAFE_DESTROY(frameBuffer);
-    return nullptr;
+DescriptorSetLayout *CCMTLDevice::createDescriptorSetLayout() {
+    return CC_NEW(CCMTLDescriptorSetLayout(this));
 }
 
-DescriptorSet *CCMTLDevice::createDescriptorSet(const DescriptorSetInfo &info) {
-    auto descriptorSet = CC_NEW(CCMTLDescriptorSet(this));
-    if (descriptorSet && descriptorSet->initialize(info))
-        return descriptorSet;
-
-    CC_SAFE_DESTROY(descriptorSet);
-    return nullptr;
+PipelineLayout *CCMTLDevice::createPipelineLayout() {
+    return CC_NEW(CCMTLPipelineLayout(this));
 }
 
-DescriptorSetLayout *CCMTLDevice::createDescriptorSetLayout(const DescriptorSetLayoutInfo &info) {
-    auto descriptorSetLayout = CC_NEW(CCMTLDescriptorSetLayout(this));
-    if (descriptorSetLayout && descriptorSetLayout->initialize(info))
-        return descriptorSetLayout;
-
-    CC_SAFE_DESTROY(descriptorSetLayout);
-    return nullptr;
-}
-
-PipelineLayout *CCMTLDevice::createPipelineLayout(const PipelineLayoutInfo &info) {
-    auto pipelineLayout = CC_NEW(CCMTLPipelineLayout(this));
-    if (pipelineLayout && pipelineLayout->initialize(info))
-        return pipelineLayout;
-
-    CC_SAFE_DESTROY(pipelineLayout);
-    return nullptr;
-}
-
-PipelineState *CCMTLDevice::createPipelineState(const PipelineStateInfo &info) {
-    auto ps = CC_NEW(CCMTLPipelineState(this));
-    if (ps && ps->initialize(info))
-        return ps;
-
-    CC_SAFE_DESTROY(ps);
-    return nullptr;
+PipelineState *CCMTLDevice::createPipelineState() {
+    return CC_NEW(CCMTLPipelineState(this));
 }
 
 void CCMTLDevice::copyBuffersToTexture(const uint8_t *const *buffers, Texture *texture, const BufferTextureCopy *regions, uint count) {

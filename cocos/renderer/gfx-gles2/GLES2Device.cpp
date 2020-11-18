@@ -161,8 +161,15 @@ bool GLES2Device::initialize(const DeviceInfo &info) {
 }
 
 void GLES2Device::destroy() {
-    CC_SAFE_DESTROY(_queue);
-    CC_SAFE_DESTROY(_cmdBuff);
+    // these two are managed by their proxies
+    if (_queue) {
+        _queue->destroy();
+        _queue = nullptr;
+    }
+    if (_cmdBuff) {
+        _cmdBuff->destroy();
+        _cmdBuff = nullptr;
+    }
     CC_SAFE_DESTROY(_context);
     CC_SAFE_DELETE(_gpuStagingBufferPool);
     CC_SAFE_DELETE(_gpuCmdAllocator);
@@ -193,148 +200,60 @@ void GLES2Device::present() {
     queue->_numTriangles = 0;
 }
 
-CommandBuffer *GLES2Device::createCommandBuffer(const CommandBufferInfo &info) {
-    CommandBuffer *cmdBuff = CC_NEW(GLES2CommandBuffer(this));
-    if (cmdBuff->initialize(info))
-        return cmdBuff;
-
-    CC_SAFE_DESTROY(cmdBuff);
-    return nullptr;
+CommandBuffer *GLES2Device::createCommandBuffer() {
+    return CC_NEW(GLES2CommandBuffer(this));
 }
 
-Fence *GLES2Device::createFence(const FenceInfo &info) {
-    Fence *fence = CC_NEW(GLES2Fence(this));
-    if (fence->initialize(info))
-        return fence;
-
-    CC_SAFE_DESTROY(fence);
-    return nullptr;
+Fence *GLES2Device::createFence() {
+    return CC_NEW(GLES2Fence(this));
 }
 
-Queue *GLES2Device::createQueue(const QueueInfo &info) {
-    Queue *queue = CC_NEW(GLES2Queue(this));
-    if (queue->initialize(info))
-        return queue;
-
-    CC_SAFE_DESTROY(queue);
-    return nullptr;
+Queue *GLES2Device::createQueue() {
+    return CC_NEW(GLES2Queue(this));
 }
 
-Buffer *GLES2Device::createBuffer(const BufferInfo &info) {
-    Buffer *buffer = CC_NEW(GLES2Buffer(this));
-    if (buffer->initialize(info))
-        return buffer;
-
-    CC_SAFE_DESTROY(buffer);
-    return nullptr;
+Buffer *GLES2Device::createBuffer() {
+    return CC_NEW(GLES2Buffer(this));
 }
 
-Buffer *GLES2Device::createBuffer(const BufferViewInfo &info) {
-    Buffer *buffer = CC_NEW(GLES2Buffer(this));
-    if (buffer->initialize(info))
-        return buffer;
-
-    CC_SAFE_DESTROY(buffer);
-    return nullptr;
+Texture *GLES2Device::createTexture() {
+    return CC_NEW(GLES2Texture(this));
 }
 
-Texture *GLES2Device::createTexture(const TextureInfo &info) {
-    Texture *texture = CC_NEW(GLES2Texture(this));
-    if (texture->initialize(info))
-        return texture;
-
-    CC_SAFE_DESTROY(texture);
-    return nullptr;
+Sampler *GLES2Device::createSampler() {
+    return CC_NEW(GLES2Sampler(this));
 }
 
-Texture *GLES2Device::createTexture(const TextureViewInfo &info) {
-    Texture *texture = CC_NEW(GLES2Texture(this));
-    if (texture->initialize(info))
-        return texture;
-
-    CC_SAFE_DESTROY(texture);
-    return nullptr;
+Shader *GLES2Device::createShader() {
+    return CC_NEW(GLES2Shader(this));
 }
 
-Sampler *GLES2Device::createSampler(const SamplerInfo &info) {
-    Sampler *sampler = CC_NEW(GLES2Sampler(this));
-    if (sampler->initialize(info))
-        return sampler;
-
-    CC_SAFE_DESTROY(sampler);
-    return nullptr;
+InputAssembler *GLES2Device::createInputAssembler() {
+    return CC_NEW(GLES2InputAssembler(this));
 }
 
-Shader *GLES2Device::createShader(const ShaderInfo &info) {
-    Shader *shader = CC_NEW(GLES2Shader(this));
-    if (shader->initialize(info))
-        return shader;
-
-    CC_SAFE_DESTROY(shader);
-    return nullptr;
+RenderPass *GLES2Device::createRenderPass() {
+    return CC_NEW(GLES2RenderPass(this));
 }
 
-InputAssembler *GLES2Device::createInputAssembler(const InputAssemblerInfo &info) {
-    InputAssembler *inputAssembler = CC_NEW(GLES2InputAssembler(this));
-    if (inputAssembler->initialize(info))
-        return inputAssembler;
-
-    CC_SAFE_DESTROY(inputAssembler);
-    return nullptr;
+Framebuffer *GLES2Device::createFramebuffer() {
+    return CC_NEW(GLES2Framebuffer(this));
 }
 
-RenderPass *GLES2Device::createRenderPass(const RenderPassInfo &info) {
-    RenderPass *renderPass = CC_NEW(GLES2RenderPass(this));
-    if (renderPass->initialize(info))
-        return renderPass;
-
-    CC_SAFE_DESTROY(renderPass);
-    return nullptr;
+DescriptorSet *GLES2Device::createDescriptorSet() {
+    return CC_NEW(GLES2DescriptorSet(this));
 }
 
-Framebuffer *GLES2Device::createFramebuffer(const FramebufferInfo &info) {
-    Framebuffer *framebuffer = CC_NEW(GLES2Framebuffer(this));
-    if (framebuffer->initialize(info))
-        return framebuffer;
-
-    CC_SAFE_DESTROY(framebuffer);
-    return nullptr;
+DescriptorSetLayout *GLES2Device::createDescriptorSetLayout() {
+    return CC_NEW(GLES2DescriptorSetLayout(this));
 }
 
-DescriptorSet *GLES2Device::createDescriptorSet(const DescriptorSetInfo &info) {
-    DescriptorSet *descriptorSet = CC_NEW(GLES2DescriptorSet(this));
-    if (descriptorSet->initialize(info))
-        return descriptorSet;
-
-    CC_SAFE_DESTROY(descriptorSet);
-    return nullptr;
+PipelineLayout *GLES2Device::createPipelineLayout() {
+    return CC_NEW(GLES2PipelineLayout(this));
 }
 
-DescriptorSetLayout *GLES2Device::createDescriptorSetLayout(const DescriptorSetLayoutInfo &info) {
-    DescriptorSetLayout *descriptorSetLayout = CC_NEW(GLES2DescriptorSetLayout(this));
-    if (descriptorSetLayout->initialize(info))
-        return descriptorSetLayout;
-
-    CC_SAFE_DESTROY(descriptorSetLayout);
-    return nullptr;
-}
-
-PipelineLayout *GLES2Device::createPipelineLayout(const PipelineLayoutInfo &info) {
-    PipelineLayout *pipelineLayout = CC_NEW(GLES2PipelineLayout(this));
-    if (pipelineLayout->initialize(info))
-        return pipelineLayout;
-
-    CC_SAFE_DESTROY(pipelineLayout);
-    return nullptr;
-}
-
-PipelineState *GLES2Device::createPipelineState(const PipelineStateInfo &info) {
-    PipelineState *pipelineState = CC_NEW(GLES2PipelineState(this));
-    if (pipelineState->initialize(info))
-        return pipelineState;
-
-    CC_SAFE_DESTROY(pipelineState);
-    return nullptr;
+PipelineState *GLES2Device::createPipelineState() {
+    return CC_NEW(GLES2PipelineState(this));
 }
 
 void GLES2Device::copyBuffersToTexture(const uint8_t *const *buffers, Texture *dst, const BufferTextureCopy *regions, uint count) {

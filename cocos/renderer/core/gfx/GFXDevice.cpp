@@ -1,6 +1,7 @@
 #include "CoreStd.h"
 #include "GFXDevice.h"
 #include "GFXContext.h"
+
 namespace cc {
 namespace gfx {
 
