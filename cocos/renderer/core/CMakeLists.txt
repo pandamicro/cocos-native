@@ -142,7 +142,9 @@ endif()
 if(MSVC)
     set_property(TARGET ${TARGET_NAME} PROPERTY LINK_FLAGS "/SUBSYSTEM:WINDOWS")
     target_compile_options(${TARGET_NAME}
-        PUBLIC /MP
+		PUBLIC /MP
+		PUBLIC /utf-8 # MSVC portability
+		PUBLIC /wd4324 # command encoder alignment
     )
 	target_link_directories(${TARGET_NAME} PUBLIC ${COCOS_EXTERNAL_PATH}/win32/libs)
 endif()

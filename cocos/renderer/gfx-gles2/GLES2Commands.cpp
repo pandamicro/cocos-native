@@ -1648,7 +1648,7 @@ void GLES2CmdFuncExecuteCmds(GLES2Device *device, GLES2CmdPackage *cmdPackage) {
                         cache->dss.depthTest = gpuPipelineState->dss.depthTest;
                     }
                     if (cache->dss.depthWrite != gpuPipelineState->dss.depthWrite) {
-                        glDepthMask(gpuPipelineState->dss.depthWrite);
+                        glDepthMask(!!gpuPipelineState->dss.depthWrite);
                         cache->dss.depthWrite = gpuPipelineState->dss.depthWrite;
                     }
                     if (cache->dss.depthFunc != gpuPipelineState->dss.depthFunc) {
