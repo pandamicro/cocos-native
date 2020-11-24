@@ -189,7 +189,7 @@ void GLES3Context::present()
     }
 }
 
-bool GLES3Context::MakeCurrentImpl()
+bool GLES3Context::MakeCurrentImpl(bool bound)
 {
   return [EAGLContext setCurrentContext: bound ? (EAGLContext*)_eaglContext : nil];
 }
