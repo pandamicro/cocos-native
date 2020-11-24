@@ -240,6 +240,37 @@ bool GLES2Context::initialize(const ContextInfo &info) {
         }
 
         _eglSharedContext = _eglContext;
+
+#if (CC_PLATFORM == CC_PLATFORM_ANDROID)
+        EventDispatcher::addCustomEventListener(EVENT_DESTROY_WINDOW, [=](const CustomEvent &) -> void {
+            if (_eglSurface != EGL_NO_SURFACE) {
+                eglDestroySurface(_eglDisplay, _eglSurface);
+                _eglSurface = EGL_NO_SURFACE;
+            }
+        });
+
+        EventDispatcher::addCustomEventListener(EVENT_RECREATE_WINDOW, [=](const CustomEvent &event) -> void {
+            _windowHandle = (uintptr_t)event.args->ptrVal;
+
+            EGLint nFmt;
+            if (eglGetConfigAttrib(_eglDisplay, _eglConfig, EGL_NATIVE_VISUAL_ID, &nFmt) == EGL_FALSE) {
+                CC_LOG_ERROR("Getting configuration attributes failed.");
+                return;
+            }
+            uint width = _device->getWidth();
+            uint height = _device->getHeight();
+            ANativeWindow_setBuffersGeometry((ANativeWindow *)_windowHandle, width, height, nFmt);
+
+            _eglSurface = eglCreateWindowSurface(_eglDisplay, _eglConfig, (EGLNativeWindowType)_windowHandle, NULL);
+            if (_eglSurface == EGL_NO_SURFACE) {
+                CC_LOG_ERROR("Recreate window surface failed.");
+                return;
+            }
+
+            ((GLES2Context*)_device->getContext())->MakeCurrent();
+        });
+#endif
+
     } else {
         GLES2Context *sharedCtx = (GLES2Context *)info.sharedCtx;
 
@@ -249,22 +280,11 @@ bool GLES2Context::initialize(const ContextInfo &info) {
         _eglDisplay = sharedCtx->egl_display();
         _eglConfig = sharedCtx->egl_config();
         _eglSharedContext = sharedCtx->egl_shared_ctx();
+        _eglSurface = sharedCtx->egl_surface();
         _colorFmt = sharedCtx->getColorFormat();
         _depthStencilFmt = sharedCtx->getDepthStencilFormat();
-
-        EGLint pbuffAttribs[] = {
-            EGL_WIDTH, 2,
-            EGL_HEIGHT, 2,
-            EGL_LARGEST_PBUFFER, EGL_TRUE,
-            EGL_TEXTURE_FORMAT, EGL_NO_TEXTURE,
-            EGL_TEXTURE_TARGET, EGL_NO_TEXTURE,
-            EGL_NONE};
-
-        _eglSurface = eglCreatePbufferSurface(_eglDisplay, _eglConfig, pbuffAttribs);
-        if (_eglSurface == EGL_NO_SURFACE) {
-            CC_LOG_ERROR("eglCreatePbufferSurface - FAILED");
-            return false;
-        }
+        _majorVersion = sharedCtx->major_ver();
+        _minorVersion = sharedCtx->minor_ver();
 
         bool hasKHRCreateCtx = CheckExtension(CC_TOSTR(EGL_KHR_create_context));
         if (!hasKHRCreateCtx) {
@@ -300,41 +320,8 @@ bool GLES2Context::initialize(const ContextInfo &info) {
         }
     }
 
-    if (!MakeCurrent()) {
-        return false;
-    }
+    return MakeCurrent();
 
-    #if (CC_PLATFORM == CC_PLATFORM_ANDROID)
-    EventDispatcher::addCustomEventListener(EVENT_DESTROY_WINDOW, [=](const CustomEvent &) -> void {
-        if (_eglSurface != EGL_NO_SURFACE) {
-            eglDestroySurface(_eglDisplay, _eglSurface);
-            _eglSurface = EGL_NO_SURFACE;
-        }
-    });
-
-    EventDispatcher::addCustomEventListener(EVENT_RECREATE_WINDOW, [=](const CustomEvent &event) -> void {
-        _windowHandle = (uintptr_t)event.args->ptrVal;
-
-        EGLint nFmt;
-        if (eglGetConfigAttrib(_eglDisplay, _eglConfig, EGL_NATIVE_VISUAL_ID, &nFmt) == EGL_FALSE) {
-            CC_LOG_ERROR("Getting configuration attributes failed.");
-            return;
-        }
-        uint width = _device->getWidth();
-        uint height = _device->getHeight();
-        ANativeWindow_setBuffersGeometry((ANativeWindow *)_windowHandle, width, height, nFmt);
-
-        _eglSurface = eglCreateWindowSurface(_eglDisplay, _eglConfig, (EGLNativeWindowType)_windowHandle, NULL);
-        if (_eglSurface == EGL_NO_SURFACE) {
-            CC_LOG_ERROR("Recreate window surface failed.");
-            return;
-        }
-
-        MakeCurrent();
-    });
-    #endif
-
-    return true;
 }
 
 void GLES2Context::destroy() {
@@ -363,8 +350,12 @@ void GLES2Context::destroy() {
     _isInitialized = false;
 }
 
-bool GLES2Context::MakeCurrentImpl() {
-    return eglMakeCurrent(_eglDisplay, _eglSurface, _eglSurface, _eglContext);
+bool GLES2Context::MakeCurrentImpl(bool bound) {
+    return eglMakeCurrent(_eglDisplay,
+        bound ? _eglSurface : EGL_NO_SURFACE,
+        bound ? _eglSurface : EGL_NO_SURFACE,
+        bound ? _eglContext : EGL_NO_CONTEXT
+    );
 }
 
 void GLES2Context::present() {
@@ -373,8 +364,12 @@ void GLES2Context::present() {
 
 #endif
 
-bool GLES2Context::MakeCurrent() {
-    if (MakeCurrentImpl()) {
+bool GLES2Context::MakeCurrent(bool bound) {
+    if (!bound) {
+        return MakeCurrentImpl(false);
+    }
+
+    if (MakeCurrentImpl(bound)) {
         if (!_isInitialized) {
 
 #if (CC_PLATFORM == CC_PLATFORM_WINDOWS || CC_PLATFORM == CC_PLATFORM_ANDROID)

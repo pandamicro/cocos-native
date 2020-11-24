@@ -12,6 +12,7 @@
 namespace cc {
 namespace gfx {
 
+class GLES2Context;
 class GLES2GPUStateCache;
 class GLES2GPUCommandAllocator;
 class GLES2GPUStagingBufferPool;
@@ -57,6 +58,7 @@ public:
     virtual PipelineLayout *createPipelineLayout() override;
     virtual PipelineState *createPipelineState() override;
     virtual void copyBuffersToTexture(const uint8_t *const *buffers, Texture *dst, const BufferTextureCopy *regions, uint count) override;
+    virtual void makeCurrent() override;
     bool checkForETC2() const;
 
     CC_INLINE bool useVAO() const { return _useVAO; }
@@ -78,6 +80,8 @@ public:
     }
 
 private:
+    GLES2Context *_initContext = nullptr;
+    GLES2Context *_renderContext = nullptr;
     GLES2GPUStateCache *_gpuStateCache = nullptr;
     GLES2GPUCommandAllocator *_gpuCmdAllocator = nullptr;
     GLES2GPUStagingBufferPool *_gpuStagingBufferPool = nullptr;

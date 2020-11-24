@@ -4,6 +4,7 @@
 namespace cc {
 namespace gfx {
 
+class GLES3Context;
 class GLES3GPUStateCache;
 class GLES3GPUCommandAllocator;
 class GLES3GPUStagingBufferPool;
@@ -49,6 +50,7 @@ public:
     virtual PipelineLayout *createPipelineLayout() override;
     virtual PipelineState *createPipelineState() override;
     virtual void copyBuffersToTexture(const uint8_t *const *buffers, Texture *dst, const BufferTextureCopy *regions, uint count) override;
+    virtual void makeCurrent() override;
 
     CC_INLINE GLES3GPUStateCache *stateCache() const { return _gpuStateCache; }
     CC_INLINE GLES3GPUCommandAllocator *cmdAllocator() const { return _gpuCmdAllocator; }
@@ -64,6 +66,8 @@ public:
     }
 
 private:
+    GLES3Context *_initContext = nullptr;
+    GLES3Context *_renderContext = nullptr;
     GLES3GPUStateCache *_gpuStateCache = nullptr;
     GLES3GPUCommandAllocator *_gpuCmdAllocator = nullptr;
     GLES3GPUStagingBufferPool *_gpuStagingBufferPool = nullptr;

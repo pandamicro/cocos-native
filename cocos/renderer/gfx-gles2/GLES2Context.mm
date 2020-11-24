@@ -11,7 +11,7 @@ namespace gfx {
 #if (CC_PLATFORM == CC_PLATFORM_MAC_IOS)
 
 bool GLES2Context::initialize(const ContextInfo &info) {
-  
+
     _vsyncMode = info.vsyncMode;
     _windowHandle = info.windowHandle;
 
@@ -20,10 +20,10 @@ bool GLES2Context::initialize(const ContextInfo &info) {
     if (!info.sharedCtx) {
         _isPrimaryContex = true;
         _windowHandle = info.windowHandle;
-        
+
         CAEAGLLayer* eaglLayer = (CAEAGLLayer*)( ((UIView*)(_windowHandle)).layer);
         eaglLayer.opaque = TRUE;
-        
+
         EAGLContext* eagl_context = [[EAGLContext alloc]initWithAPI:kEAGLRenderingAPIOpenGLES2];
         if (!eagl_context) {
             CC_LOG_ERROR("Create EAGL context failed.");
@@ -48,7 +48,7 @@ bool GLES2Context::initialize(const ContextInfo &info) {
             return false;
         }
     }
-    
+
     _colorFmt = Format::RGBA8;
     _depthStencilFmt = Format::D24S8;
 
@@ -67,7 +67,7 @@ bool GLES2Context::createCustomFrameBuffer()
         return false;
     }
     glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
-    
+
     glGenRenderbuffers(1, &_defaultColorBuffer);
     if (0 == _defaultColorBuffer)
     {
@@ -75,9 +75,9 @@ bool GLES2Context::createCustomFrameBuffer()
         return false;
     }
     glBindRenderbuffer(GL_RENDERBUFFER, _defaultColorBuffer);
-    
+
     CAEAGLLayer* eaglLayer = (CAEAGLLayer*)( ((UIView*)(_windowHandle)).layer);
-    
+
     //get the storage from iOS so it can be displayed in the view
     if (! [(EAGLContext*)_eaglContext renderbufferStorage:GL_RENDERBUFFER
                                               fromDrawable:eaglLayer])
@@ -87,9 +87,9 @@ bool GLES2Context::createCustomFrameBuffer()
         glDeleteRenderbuffers(1, &_defaultColorBuffer);
         return false;
     }
-    
+
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, _defaultColorBuffer);
-    
+
     //get the frame's width and height
     GLint framebufferWidth = 0, framebufferHeight = 0;
     glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &framebufferWidth);
@@ -104,7 +104,7 @@ bool GLES2Context::createCustomFrameBuffer()
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8_OES, framebufferWidth, framebufferHeight);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _defaultDepthStencilBuffer);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, _defaultDepthStencilBuffer);
-    
+
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE)
     {
@@ -152,7 +152,7 @@ void GLES2Context::destroyCustomFrameBuffer()
         glDeleteRenderbuffers(1, &_defaultDepthStencilBuffer);
         _defaultDepthStencilBuffer = 0;
     }
-    
+
     if (_defaultFBO)
     {
         glDeleteFramebuffers(1, &_defaultFBO);
@@ -162,7 +162,7 @@ void GLES2Context::destroyCustomFrameBuffer()
 
 void GLES2Context::destroy() {
     destroyCustomFrameBuffer();
-  
+
   if (_eaglContext) {
     [(EAGLContext*)_eaglContext release];
   }
@@ -180,8 +180,8 @@ void GLES2Context::present() {
   }
 }
 
-bool GLES2Context::MakeCurrentImpl() {
-  return [EAGLContext setCurrentContext:(EAGLContext*)_eaglContext];
+bool GLES2Context::MakeCurrentImpl(bool bound) {
+  return [EAGLContext setCurrentContext: bound ? (EAGLContext*)_eaglContext : nil];
 }
 
 #endif

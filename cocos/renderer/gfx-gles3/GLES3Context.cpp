@@ -241,6 +241,37 @@ bool GLES3Context::initialize(const ContextInfo &info) {
         }
 
         _eglSharedContext = _eglContext;
+
+#if (CC_PLATFORM == CC_PLATFORM_ANDROID)
+        EventDispatcher::addCustomEventListener(EVENT_DESTROY_WINDOW, [=](const CustomEvent &) -> void {
+            if (_eglSurface != EGL_NO_SURFACE) {
+                eglDestroySurface(_eglDisplay, _eglSurface);
+                _eglSurface = EGL_NO_SURFACE;
+            }
+        });
+
+        EventDispatcher::addCustomEventListener(EVENT_RECREATE_WINDOW, [=](const CustomEvent &event) -> void {
+            _windowHandle = (uintptr_t)event.args->ptrVal;
+
+            EGLint nFmt;
+            if (eglGetConfigAttrib(_eglDisplay, _eglConfig, EGL_NATIVE_VISUAL_ID, &nFmt) == EGL_FALSE) {
+                CC_LOG_ERROR("Getting configuration attributes failed.");
+                return;
+            }
+            uint width = _device->getWidth();
+            uint height = _device->getHeight();
+            ANativeWindow_setBuffersGeometry((ANativeWindow *)_windowHandle, width, height, nFmt);
+
+            _eglSurface = eglCreateWindowSurface(_eglDisplay, _eglConfig, (EGLNativeWindowType)_windowHandle, NULL);
+            if (_eglSurface == EGL_NO_SURFACE) {
+                CC_LOG_ERROR("Recreate window surface failed.");
+                return;
+            }
+
+            ((GLES3Context*)_device->getContext())->MakeCurrent();
+        });
+#endif
+
     } else {
         GLES3Context *sharedCtx = (GLES3Context *)info.sharedCtx;
 
@@ -250,25 +281,10 @@ bool GLES3Context::initialize(const ContextInfo &info) {
         _eglDisplay = sharedCtx->egl_display();
         _eglConfig = sharedCtx->egl_config();
         _eglSharedContext = sharedCtx->egl_shared_ctx();
+        _eglSurface = sharedCtx->egl_surface();
         _colorFmt = sharedCtx->getColorFormat();
         _depthStencilFmt = sharedCtx->getDepthStencilFormat();
-
-        EGLint pbuffAttribs[] =
-            {
-                EGL_WIDTH, 2,
-                EGL_HEIGHT, 2,
-                EGL_LARGEST_PBUFFER, EGL_TRUE,
-                EGL_TEXTURE_FORMAT, EGL_NO_TEXTURE,
-                EGL_TEXTURE_TARGET, EGL_NO_TEXTURE,
-                EGL_NONE};
-
-        _eglSurface = eglCreatePbufferSurface(_eglDisplay, _eglConfig, pbuffAttribs);
-        if (_eglSurface == EGL_NO_SURFACE) {
-            CC_LOG_ERROR("eglCreatePbufferSurface - FAILED");
-            return false;
-        }
-
-        _majorVersion = 3;
+        _majorVersion = sharedCtx->major_ver();
         _minorVersion = sharedCtx->minor_ver();
 
         bool hasKHRCreateCtx = CheckExtension(CC_TOSTR(EGL_KHR_create_context));
@@ -304,41 +320,7 @@ bool GLES3Context::initialize(const ContextInfo &info) {
         }
     }
 
-    if (!MakeCurrent()) {
-        return false;
-    }
-
-    #if (CC_PLATFORM == CC_PLATFORM_ANDROID)
-    EventDispatcher::addCustomEventListener(EVENT_DESTROY_WINDOW, [=](const CustomEvent &) -> void {
-        if (_eglSurface != EGL_NO_SURFACE) {
-            eglDestroySurface(_eglDisplay, _eglSurface);
-            _eglSurface = EGL_NO_SURFACE;
-        }
-    });
-
-    EventDispatcher::addCustomEventListener(EVENT_RECREATE_WINDOW, [=](const CustomEvent &event) -> void {
-        _windowHandle = (uintptr_t)event.args->ptrVal;
-
-        EGLint nFmt;
-        if (eglGetConfigAttrib(_eglDisplay, _eglConfig, EGL_NATIVE_VISUAL_ID, &nFmt) == EGL_FALSE) {
-            CC_LOG_ERROR("Getting configuration attributes failed.");
-            return;
-        }
-        uint width = _device->getWidth();
-        uint height = _device->getHeight();
-        ANativeWindow_setBuffersGeometry((ANativeWindow *)_windowHandle, width, height, nFmt);
-
-        _eglSurface = eglCreateWindowSurface(_eglDisplay, _eglConfig, (EGLNativeWindowType)_windowHandle, NULL);
-        if (_eglSurface == EGL_NO_SURFACE) {
-            CC_LOG_ERROR("Recreate window surface failed.");
-            return;
-        }
-
-        MakeCurrent();
-    });
-    #endif
-
-    return true;
+    return MakeCurrent();
 }
 
 void GLES3Context::destroy() {
@@ -367,8 +349,12 @@ void GLES3Context::destroy() {
     _isInitialized = false;
 }
 
-bool GLES3Context::MakeCurrentImpl() {
-    return eglMakeCurrent(_eglDisplay, _eglSurface, _eglSurface, _eglContext);
+bool GLES3Context::MakeCurrentImpl(bool bound) {
+    return eglMakeCurrent(_eglDisplay,
+        bound ? _eglSurface : EGL_NO_SURFACE,
+        bound ? _eglSurface : EGL_NO_SURFACE,
+        bound ? _eglContext : EGL_NO_CONTEXT
+    );
 }
 
 void GLES3Context::present() {
@@ -377,8 +363,12 @@ void GLES3Context::present() {
 
 #endif
 
-bool GLES3Context::MakeCurrent() {
-    if (MakeCurrentImpl()) {
+bool GLES3Context::MakeCurrent(bool bound) {
+    if (!bound) {
+        return MakeCurrentImpl(false);
+    }
+
+    if (MakeCurrentImpl(bound)) {
         if (!_isInitialized) {
 #if (CC_PLATFORM == CC_PLATFORM_WINDOWS || CC_PLATFORM == CC_PLATFORM_ANDROID)
             // Turn on or off the vertical sync depending on the input bool value.
@@ -448,7 +438,7 @@ bool GLES3Context::MakeCurrent() {
             _isInitialized = true;
         }
 
-        CC_LOG_DEBUG("eglMakeCurrent() - SUCCESSED, Context: 0x%p", this);
+        CC_LOG_DEBUG("eglMakeCurrent() - SUCCEEDED, Context: 0x%p", this);
         return true;
     } else {
         CC_LOG_ERROR("MakeCurrent() - FAILED, Context: 0x%p", this);

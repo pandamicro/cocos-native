@@ -11,7 +11,7 @@ namespace gfx {
 
 bool GLES3Context::initialize(const ContextInfo &info)
 {
-  
+
     _vsyncMode = info.vsyncMode;
     _windowHandle = info.windowHandle;
 
@@ -21,7 +21,7 @@ bool GLES3Context::initialize(const ContextInfo &info)
     {
         _isPrimaryContex = true;
         _windowHandle = info.windowHandle;
-        
+
         CAEAGLLayer* eaglLayer = (CAEAGLLayer*)( ((UIView*)(_windowHandle)).layer);
         eaglLayer.opaque = TRUE;
 
@@ -48,10 +48,10 @@ bool GLES3Context::initialize(const ContextInfo &info)
         if (!eagl_context)
         {
           CC_LOG_ERROR("Create EGL context with share context [0x%p] failed.", eagl_shared_context);
-          
+
           _eaglContext = (intptr_t)eagl_context;
           _eaglSharedContext = (intptr_t)eagl_shared_context;
-          
+
           return false;
         }
     }
@@ -73,7 +73,7 @@ bool GLES3Context::createCustomFrameBuffer()
         return false;
     }
     glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
-    
+
     glGenRenderbuffers(1, &_defaultColorBuffer);
     if (0 == _defaultColorBuffer)
     {
@@ -81,7 +81,7 @@ bool GLES3Context::createCustomFrameBuffer()
         return false;
     }
     glBindRenderbuffer(GL_RENDERBUFFER, _defaultColorBuffer);
-    
+
     CAEAGLLayer* eaglLayer = (CAEAGLLayer*)( ((UIView*)(_windowHandle)).layer);
     if (! [(EAGLContext*)_eaglContext renderbufferStorage:GL_RENDERBUFFER
                                               fromDrawable:eaglLayer])
@@ -91,13 +91,13 @@ bool GLES3Context::createCustomFrameBuffer()
         glDeleteRenderbuffers(1, &_defaultColorBuffer);
         return false;
     }
-    
+
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, _defaultColorBuffer);
-    
+
     GLint framebufferWidth = 0, framebufferHeight = 0;
     glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &framebufferWidth);
     glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &framebufferHeight);
-    
+
     glGenRenderbuffers(1, &_defaultDepthStencilBuffer);
     if (_defaultDepthStencilBuffer == 0)
     {
@@ -140,7 +140,7 @@ bool GLES3Context::createCustomFrameBuffer()
         destroyCustomFrameBuffer();
         return false;
     }
-    
+
     glBindRenderbuffer(GL_RENDERBUFFER, _defaultColorBuffer);
     return true;
 }
@@ -157,7 +157,7 @@ void GLES3Context::destroyCustomFrameBuffer()
         glDeleteRenderbuffers(1, &_defaultDepthStencilBuffer);
         _defaultDepthStencilBuffer = 0;
     }
-    
+
     if (_defaultFBO)
     {
         glDeleteFramebuffers(1, &_defaultFBO);
@@ -168,7 +168,7 @@ void GLES3Context::destroyCustomFrameBuffer()
 void GLES3Context::destroy()
 {
     destroyCustomFrameBuffer();
-    
+
     if (_eaglContext)
     {
         [(EAGLContext*)_eaglContext release];
@@ -182,7 +182,7 @@ void GLES3Context::destroy()
 
 void GLES3Context::present()
 {
-  
+
     if (! [(EAGLContext*)_eaglContext presentRenderbuffer:GL_RENDERBUFFER] )
     {
         CC_LOG_ERROR("Failed to present content.");
@@ -191,7 +191,7 @@ void GLES3Context::present()
 
 bool GLES3Context::MakeCurrentImpl()
 {
-  return [EAGLContext setCurrentContext:(EAGLContext*)_eaglContext];
+  return [EAGLContext setCurrentContext: bound ? (EAGLContext*)_eaglContext : nil];
 }
 
 } // namespace gfx

@@ -40,7 +40,16 @@ if(COCOS_PLATFORM_IOS OR COCOS_PLATFORM_OSX)
 	file(GLOB_RECURSE SOURCE_MM_FILES *.m *.mm)
 endif()
 
-set(ALL_FILES ${HEADER_FILES} ${SOURCE_CPP_FILES} ${SOURCE_C_FILES})
+set(CC_BASE_HEADERS
+    ${COCOS_SRC_PATH}/base/StringUtil.h
+)
+
+set(CC_BASE_SOURCES
+    ${COCOS_SRC_PATH}/base/StringUtil.cpp
+)
+
+
+set(ALL_FILES ${HEADER_FILES} ${SOURCE_CPP_FILES} ${SOURCE_C_FILES} ${CC_BASE_HEADERS} ${CC_BASE_SOURCES})
 
 if(COCOS_PLATFORM_IOS OR COCOS_PLATFORM_OSX)
 	set(ALL_FILES ${ALL_FILES} ${SOURCE_MM_FILES})
@@ -60,7 +69,7 @@ else()
 	add_library(${TARGET_NAME} SHARED ${HEADER_FILES} ${ALL_FILES})
 endif()
 
-target_link_libraries(${TARGET_NAME} Core glslang SPIRV)
+target_link_libraries(${TARGET_NAME} Core glslang OGLCompiler OSDependent SPIRV glslang-default-resource-limits)
 
 set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME CCGFXVulkan)
 set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME_DEBUG CCGFXVulkan_d)
