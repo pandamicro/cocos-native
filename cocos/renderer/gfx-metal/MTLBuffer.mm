@@ -317,13 +317,7 @@ void CCMTLBuffer::updateInflightBuffer(uint offset, uint size) {
         _inflightIndex = ((_inflightIndex + 1) % MAX_INFLIGHT_BUFFER);
         id<MTLBuffer> prevFrameBuffer = _mtlBuffer;
         _mtlBuffer = _dynamicDataBuffers[_inflightIndex];
-        if (offset) {
-            memcpy((uint8_t *)_mtlBuffer.contents, prevFrameBuffer.contents, offset);
-        }
-        offset += size;
-        if (offset < _size) {
-            memcpy((uint8_t *)_mtlBuffer.contents + offset, (uint8_t *)prevFrameBuffer.contents + offset, _size - offset);
-        }
+        memcpy((uint8_t *)_mtlBuffer.contents, prevFrameBuffer.contents, offset + size);
         _inflightDirty = false;
     }
 }
