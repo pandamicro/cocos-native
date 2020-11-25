@@ -50,7 +50,6 @@ private:
     void bindDescriptorSets();
     bool isRenderingEntireDrawable(const Rect &rect, const CCMTLRenderPass *renderPass);
 
-private:
     CCMTLGPUPipelineState *_gpuPipelineState = nullptr;
     Viewport _currentViewport;
     Rect _currentScissor;
