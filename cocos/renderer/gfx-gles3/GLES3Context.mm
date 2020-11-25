@@ -1,9 +1,10 @@
 #include "GLES3Std.h"
 #include "GLES3Context.h"
 #include "gles3w.h"
-#import <QuartzCore/CAEAGLLayer.h>
+#import <QuartzCore/CAOpenGLLayer.h>
+#if !TARGET_OS_OSX
 #import <UIKit/UIScreen.h>
-
+#endif
 #if (CC_PLATFORM == CC_PLATFORM_MAC_IOS)
 
 namespace cc {
@@ -34,6 +35,7 @@ bool GLES3Context::initialize(const ContextInfo &info)
 
         _eaglContext = (intptr_t)eagl_context;
         _eaglSharedContext = (intptr_t)eagl_context;
+        _majorVersion = 3;
 
         if (!gles3wInit())
         {
@@ -43,6 +45,11 @@ bool GLES3Context::initialize(const ContextInfo &info)
     else
     {
         GLES3Context* sharedCtx = (GLES3Context*)info.sharedCtx;
+        _majorVersion = sharedCtx->_majorVersion;
+        _defaultFBO = sharedCtx->_defaultFBO;
+        _defaultColorBuffer = sharedCtx->_defaultColorBuffer;
+        _defaultDepthStencilBuffer = sharedCtx->_defaultDepthStencilBuffer;
+        
         EAGLContext* eagl_shared_context = (EAGLContext*)sharedCtx->eagl_shared_ctx();
         EAGLContext* eagl_context = [[EAGLContext alloc] initWithAPI: [eagl_shared_context API] sharegroup: [eagl_shared_context sharegroup]];
         if (!eagl_context)
@@ -66,6 +73,8 @@ bool GLES3Context::initialize(const ContextInfo &info)
 
 bool GLES3Context::createCustomFrameBuffer()
 {
+    if (_defaultFBO) return true;
+    
     glGenFramebuffers(1, &_defaultFBO);
     if (0 == _defaultFBO)
     {
@@ -191,7 +200,8 @@ void GLES3Context::present()
 
 bool GLES3Context::MakeCurrentImpl(bool bound)
 {
-  return [EAGLContext setCurrentContext: bound ? (EAGLContext*)_eaglContext : nil];
+    if (!bound) return true;
+    return [EAGLContext setCurrentContext: (EAGLContext*)_eaglContext];
 }
 
 } // namespace gfx

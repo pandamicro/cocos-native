@@ -17,15 +17,25 @@ set(INCLUDE_FILES
 if(WIN32)
   list(APPEND INCLUDE_FILES ${GFX_EXTERNAL_PATH}/pvrsdk/include)
 
-if(COCOS_CPU_X64)
-  set(PVRSDK_LIB_DIR ${GFX_EXTERNAL_PATH}/pvrsdk/lib/Windows_x86_64)
-else()
-  set(PVRSDK_LIB_DIR ${GFX_EXTERNAL_PATH}/pvrsdk/lib/Windows_x86_32)
-endif()
+  if(COCOS_CPU_X64)
+    set(PVRSDK_LIB_DIR ${GFX_EXTERNAL_PATH}/pvrsdk/lib/Windows_x86_64)
+  else()
+    set(PVRSDK_LIB_DIR ${GFX_EXTERNAL_PATH}/pvrsdk/lib/Windows_x86_32)
+  endif()
 
   link_libraries(
     ${PVRSDK_LIB_DIR}/libEGL.lib
-	${PVRSDK_LIB_DIR}/libGLESv2.lib
+	  ${PVRSDK_LIB_DIR}/libGLESv2.lib
+  )
+endif()
+
+if(COCOS_PLATFORM_OSX)
+  list(APPEND INCLUDE_FILES ${GFX_EXTERNAL_PATH}/pvrsdk/include)
+  set(PVRSDK_LIB_DIR ${GFX_EXTERNAL_PATH}/pvrsdk/lib/OSX_x86)
+
+  link_libraries(
+    ${PVRSDK_LIB_DIR}/libEGL.dylib
+    ${PVRSDK_LIB_DIR}/libGLESv2.dylib
   )
 endif()
 
@@ -41,7 +51,13 @@ if(COCOS_PLATFORM_IOS OR COCOS_PLATFORM_OSX)
 	file(GLOB_RECURSE SOURCE_MM_FILES *.m *.mm)
 endif()
 
-set(ALL_FILES ${HEADER_FILES} ${SOURCE_CPP_FILES} ${SOURCE_C_FILES})
+set(ALL_FILES
+  ${HEADER_FILES}
+  ${SOURCE_CPP_FILES}
+  ${SOURCE_C_FILES}
+  ${COCOS_SRC_PATH}/base/StringUtil.h
+  ${COCOS_SRC_PATH}/base/StringUtil.cpp
+  )
 
 if(COCOS_PLATFORM_IOS OR COCOS_PLATFORM_OSX)
 	set(ALL_FILES ${ALL_FILES} ${SOURCE_MM_FILES})
