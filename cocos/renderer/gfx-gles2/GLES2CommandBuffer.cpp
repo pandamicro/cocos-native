@@ -242,8 +242,7 @@ void GLES2CommandBuffer::updateBuffer(Buffer *buff, const void *data, uint size,
             cmd->gpuBuffer = gpuBuffer;
             cmd->size = size;
             cmd->offset = offset;
-            cmd->buffer = ((GLES2Device *)_device)->stagingBufferPool()->alloc(size);
-            memcpy(cmd->buffer, data, size);
+            cmd->buffer = (uint8_t *)data;
 
             _cmdPackage->updateBufferCmds.push(cmd);
             _cmdPackage->cmds.push(GFXCmdType::UPDATE_BUFFER);
@@ -262,16 +261,7 @@ void GLES2CommandBuffer::copyBuffersToTexture(const uint8_t *const *buffers, Tex
             cmd->gpuTexture = gpuTexture;
             cmd->regions = regions;
             cmd->count = count;
-
-            for (uint i = 0u, n = 0u; i < count; i++) {
-                const BufferTextureCopy &region = regions[i];
-                GLsizei size = (GLsizei)FormatSize(gpuTexture->format, region.texExtent.width, region.texExtent.height, 1);
-                for (uint l = 0; l < region.texSubres.layerCount; l++) {
-                    uint8_t *buffer = ((GLES2Device *)_device)->stagingBufferPool()->alloc(size);
-                    memcpy(buffer, buffers[n++], size);
-                    cmd->buffers.push_back(buffer);
-                }
-            }
+            cmd->buffers = buffers;
 
             _cmdPackage->copyBufferToTextureCmds.push(cmd);
             _cmdPackage->cmds.push(GFXCmdType::COPY_BUFFER_TO_TEXTURE);
