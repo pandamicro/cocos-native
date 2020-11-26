@@ -27,21 +27,21 @@ public:
     ~CCVKDevice();
 
     friend class CCVKContext;
-    using Device::createCommandBuffer;
-    using Device::createFence;
-    using Device::createQueue;
+    using Device::copyBuffersToTexture;
     using Device::createBuffer;
-    using Device::createTexture;
-    using Device::createSampler;
-    using Device::createShader;
-    using Device::createInputAssembler;
-    using Device::createRenderPass;
-    using Device::createFramebuffer;
+    using Device::createCommandBuffer;
     using Device::createDescriptorSet;
     using Device::createDescriptorSetLayout;
+    using Device::createFence;
+    using Device::createFramebuffer;
+    using Device::createInputAssembler;
     using Device::createPipelineLayout;
     using Device::createPipelineState;
-    using Device::copyBuffersToTexture;
+    using Device::createQueue;
+    using Device::createRenderPass;
+    using Device::createSampler;
+    using Device::createShader;
+    using Device::createTexture;
 
     virtual bool initialize(const DeviceInfo &info) override;
     virtual void destroy() override;
@@ -75,14 +75,15 @@ public:
     CC_INLINE CCVKGPUDevice *gpuDevice() const { return _gpuDevice; }
     CC_INLINE CCVKGPUSwapchain *gpuSwapchain() { return _gpuSwapchain; }
 
-    CC_INLINE CCVKGPUFencePool *gpuFencePool() { return _gpuFencePool; }
-    CC_INLINE CCVKGPURecycleBin *gpuRecycleBin() { return _gpuRecycleBin; }
-    CC_INLINE CCVKGPUTransportHub *gpuTransportHub() { return _gpuTransportHub; }
     CC_INLINE CCVKGPUDescriptorHub *gpuDescriptorHub() { return _gpuDescriptorHub; }
     CC_INLINE CCVKGPUSemaphorePool *gpuSemaphorePool() { return _gpuSemaphorePool; }
-    CC_INLINE CCVKGPUDescriptorSetPool *gpuDescriptorSetPool() { return _gpuDescriptorSetPool; }
-    CC_INLINE CCVKGPUCommandBufferPool *gpuCommandBufferPool() { return _gpuCommandBufferPool; }
-    CC_INLINE CCVKGPUStagingBufferPool *gpuStagingBufferPool() { return _gpuStagingBufferPool; }
+
+    CCVKGPUFencePool *gpuFencePool();
+    CCVKGPURecycleBin *gpuRecycleBin();
+    CCVKGPUTransportHub *gpuTransportHub();
+    CCVKGPUDescriptorSetPool *gpuDescriptorSetPool();
+    CCVKGPUCommandBufferPool *gpuCommandBufferPool();
+    CCVKGPUStagingBufferPool *gpuStagingBufferPool();
 
 private:
     void destroySwapchain();
@@ -92,14 +93,15 @@ private:
     CCVKGPUSwapchain *_gpuSwapchain = nullptr;
     vector<CCVKTexture *> _depthStencilTextures;
 
-    CCVKGPUFencePool *_gpuFencePool = nullptr;
-    CCVKGPURecycleBin *_gpuRecycleBin = nullptr;
-    CCVKGPUTransportHub *_gpuTransportHub = nullptr;
+    vector<CCVKGPUFencePool *> _gpuFencePools;
+    vector<CCVKGPURecycleBin *> _gpuRecycleBins;
+    vector<CCVKGPUTransportHub *> _gpuTransportHubs;
+    vector<CCVKGPUDescriptorSetPool *> _gpuDescriptorSetPools;
+    vector<CCVKGPUCommandBufferPool *> _gpuCommandBufferPools;
+    vector<CCVKGPUStagingBufferPool *> _gpuStagingBufferPools;
+
     CCVKGPUDescriptorHub *_gpuDescriptorHub = nullptr;
     CCVKGPUSemaphorePool *_gpuSemaphorePool = nullptr;
-    CCVKGPUDescriptorSetPool *_gpuDescriptorSetPool = nullptr;
-    CCVKGPUCommandBufferPool *_gpuCommandBufferPool = nullptr;
-    CCVKGPUStagingBufferPool *_gpuStagingBufferPool = nullptr;
 
     vector<const char *> _layers;
     vector<const char *> _extensions;
