@@ -14,15 +14,14 @@
 
 namespace cc {
 namespace gfx {
-
+            
 namespace {
 
 constexpr uint FORCE_MINOR_VERSION = 0;             // 0 for default version, otherwise minorVersion = (FORCE_MINOR_VERSION - 1)
-constexpr uint ALLOW_VALIDATION_ERRORS = 0;         // 0 for default behavior, otherwise assertions will be disabled
-constexpr uint PREFERRED_SWAPCHAIN_IMAGE_COUNT = 0; // 0 for default count, otherwise prefer the specified number
+constexpr uint DISABLE_VALIDATION_ASSERTIONS = 0;   // 0 for default behavior, otherwise assertions will be disabled
 
 #define FORCE_ENABLE_VALIDATION  0
-#define FORCE_DISABLE_VALIDATION 0
+#define FORCE_DISABLE_VALIDATION 1
 
 #if CC_DEBUG > 0 && !FORCE_DISABLE_VALIDATION || FORCE_ENABLE_VALIDATION
 VKAPI_ATTR VkBool32 VKAPI_CALL debugUtilsMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -44,7 +43,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugUtilsMessengerCallback(VkDebugUtilsMessageSe
         CC_LOG_WARNING("%s: %s", callbackData->pMessageIdName, callbackData->pMessage);
     } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
         CC_LOG_ERROR("%s: %s", callbackData->pMessageIdName, callbackData->pMessage);
-        CCASSERT(ALLOW_VALIDATION_ERRORS, "Validation Error");
+        CCASSERT(DISABLE_VALIDATION_ASSERTIONS, "Validation Error");
     }
     return VK_FALSE;
 }
@@ -486,9 +485,6 @@ bool CCVKContext::initialize(const ContextInfo &info) {
 
         // Determine the number of images
         uint desiredNumberOfSwapchainImages = std::max(device->_backBufferCount, surfaceCapabilities.minImageCount + 1);
-        if (PREFERRED_SWAPCHAIN_IMAGE_COUNT) {
-            desiredNumberOfSwapchainImages = PREFERRED_SWAPCHAIN_IMAGE_COUNT;
-        }
 
         if ((surfaceCapabilities.maxImageCount > 0) && (desiredNumberOfSwapchainImages > surfaceCapabilities.maxImageCount)) {
             desiredNumberOfSwapchainImages = surfaceCapabilities.maxImageCount;

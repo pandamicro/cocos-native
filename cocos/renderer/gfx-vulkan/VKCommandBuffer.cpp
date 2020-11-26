@@ -89,8 +89,6 @@ void CCVKCommandBuffer::end() {
     _curGPUFBO = nullptr;
     VK_CHECK(vkEndCommandBuffer(_gpuCommandBuffer->vkCommandBuffer));
     _gpuCommandBuffer->began = false;
-
-    ((CCVKDevice *)_device)->gpuCommandBufferPool()->yield(_gpuCommandBuffer);
 }
 
 void CCVKCommandBuffer::beginRenderPass(RenderPass *renderPass, Framebuffer *fbo, const Rect &renderArea,
