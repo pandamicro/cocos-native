@@ -48,7 +48,8 @@ private:
     bool _isInRenderPass = false;
     GLES2GPUPipelineState *_curGPUPipelineState = nullptr;
     vector<GLES2GPUDescriptorSet *> _curGPUDescriptorSets;
-    vector<vector<uint>> _curDynamicOffsets;
+    vector<const uint *> _curDynamicOffsets;
+    vector<uint> _curDynamicOffsetCounts;
     GLES2GPUInputAssembler *_curGPUInputAssember = nullptr;
     Viewport _curViewport;
     Rect _curScissor;
