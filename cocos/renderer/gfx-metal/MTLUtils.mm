@@ -1549,7 +1549,7 @@ CCMTLGPUPipelineState *getClearRenderPassPipelineState(CCMTLDevice *device, Rend
     pipelineInfo.inputState = {{position}};
     pipelineInfo.renderPass = renderPass;
 
-    pipelineState = gfx::Device::getInstance()->createPipelineState(std::move(pipelineInfo));
+    pipelineState = device->createPipelineState(std::move(pipelineInfo));
     CC_DELETE(pipelineInfo.shader);
     return static_cast<CCMTLPipelineState *>(pipelineState)->getGPUPipelineState();
 }
