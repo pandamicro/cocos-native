@@ -15,7 +15,6 @@ public:
     GLES3CommandBuffer(Device *device);
     ~GLES3CommandBuffer();
 
-public:
     virtual bool initialize(const CommandBufferInfo &info) override;
     virtual void destroy() override;
 
@@ -39,10 +38,9 @@ public:
     virtual void copyBuffersToTexture(const uint8_t *const *buffers, Texture *texture, const BufferTextureCopy *regions, uint count) override;
     virtual void execute(const CommandBuffer *const *cmdBuffs, uint32_t count) override;
 
-private:
-    void BindStates();
+protected:
+    virtual void BindStates();
 
-private:
     GLES3CmdPackage *_cmdPackage = nullptr;
     GLES3GPUCommandAllocator *_gles3Allocator = nullptr;
     bool _isInRenderPass = false;
@@ -50,7 +48,6 @@ private:
     GLES3GPUInputAssembler *_curGPUInputAssember = nullptr;
     vector<GLES3GPUDescriptorSet *> _curGPUDescriptorSets;
     vector<const uint *> _curDynamicOffsets;
-    vector<uint> _curDynamicOffsetCounts;
     Viewport _curViewport;
     Rect _curScissor;
     float _curLineWidth = 1.0f;
