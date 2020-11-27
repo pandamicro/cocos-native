@@ -229,6 +229,17 @@ class GLES3GPUFence : public Object {
 public:
 };
 
+struct GLES3ObjectCache {
+    size_t numClearColors = 0u;
+    GLES3GPURenderPass *gpuRenderPass = nullptr;
+    GLES3GPUFramebuffer *gpuFramebuffer = nullptr;
+    GLES3GPUPipelineState *gpuPipelineState = nullptr;
+    GLES3GPUInputAssembler *gpuInputAssembler = nullptr;
+    bool reverseCW = false;
+    GLenum glPrimitive = 0;
+    GLenum invalidAttachments[GFX_MAX_ATTACHMENTS];
+};
+
 class GLES3GPUStateCache : public Object {
 public:
     GLuint glArrayBuffer = 0;
@@ -254,6 +265,7 @@ public:
     bool isCullFaceEnabled = true;
     bool isStencilTestEnabled = false;
     map<String, uint> texUnitCacheMap;
+    GLES3ObjectCache gfxStateCache;
 
     void initialize(size_t texUnits, size_t bufferBindings, size_t vertexAttributes) {
         bt.resize(1);
@@ -264,6 +276,33 @@ public:
         glSamplers.resize(texUnits, 0u);
         glEnabledAttribLocs.resize(vertexAttributes, false);
         glCurrentAttribLocs.resize(vertexAttributes, false);
+    }
+
+    void reset() {
+        glArrayBuffer = 0;
+        glElementArrayBuffer = 0;
+        glUniformBuffer = 0;
+        glBindUBOs.assign(glBindUBOs.size(), 0u);
+        glBindUBOOffsets.assign(glBindUBOOffsets.size(), 0u);
+        glVAO = 0;
+        texUint = 0;
+        glTextures.assign(glTextures.size(), 0u);
+        glSamplers.assign(glSamplers.size(), 0u);
+        glProgram = 0;
+        glEnabledAttribLocs.assign(glEnabledAttribLocs.size(), 0u);
+        glCurrentAttribLocs.assign(glCurrentAttribLocs.size(), 0u);
+        glFramebuffer = 0;
+        glReadFBO = 0;
+        isCullFaceEnabled = true;
+        isStencilTestEnabled = false;
+
+        gfxStateCache.numClearColors = 0u;
+        gfxStateCache.gpuRenderPass = nullptr;
+        gfxStateCache.gpuFramebuffer = nullptr;
+        gfxStateCache.gpuPipelineState = nullptr;
+        gfxStateCache.gpuInputAssembler = nullptr;
+        gfxStateCache.glPrimitive = 0u;
+        gfxStateCache.reverseCW = false;
     }
 };
 

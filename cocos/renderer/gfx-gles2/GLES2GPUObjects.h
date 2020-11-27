@@ -263,6 +263,17 @@ class GLES2GPUFence : public Object {
 public:
 };
 
+struct GLES2ObjectCache {
+    size_t numClearColors = 0u;
+    GLES2GPURenderPass *gpuRenderPass = nullptr;
+    GLES2GPUFramebuffer *gpuFramebuffer = nullptr;
+    GLES2GPUPipelineState *gpuPipelineState = nullptr;
+    GLES2GPUInputAssembler *gpuInputAssembler = nullptr;
+    bool reverseCW = false;
+    GLenum glPrimitive = 0;
+    GLenum invalidAttachments[GFX_MAX_ATTACHMENTS];
+};
+
 class GLES2GPUStateCache : public Object {
 public:
     GLuint glArrayBuffer = 0;
@@ -285,6 +296,7 @@ public:
     bool isCullFaceEnabled = true;
     bool isStencilTestEnabled = false;
     map<String, uint> texUnitCacheMap;
+    GLES2ObjectCache gfxStateCache;
 
     void initialize(size_t texUnits, size_t vertexAttributes) {
         bt.resize(1);
@@ -292,6 +304,30 @@ public:
         glTextures.resize(texUnits, 0u);
         glEnabledAttribLocs.resize(vertexAttributes, false);
         glCurrentAttribLocs.resize(vertexAttributes, false);
+    }
+
+    void reset() {
+        glArrayBuffer = 0;
+        glElementArrayBuffer = 0;
+        glUniformBuffer = 0;
+        glVAO = 0;
+        texUint = 0;
+        glTextures.assign(glTextures.size(), 0u);
+        glProgram = 0;
+        glEnabledAttribLocs.assign(glEnabledAttribLocs.size(), 0u);
+        glCurrentAttribLocs.assign(glCurrentAttribLocs.size(), 0u);
+        glFramebuffer = 0;
+        glReadFBO = 0;
+        isCullFaceEnabled = true;
+        isStencilTestEnabled = false;
+
+        gfxStateCache.gpuPipelineState = nullptr;
+        gfxStateCache.numClearColors = 0u;
+        gfxStateCache.gpuRenderPass = nullptr;
+        gfxStateCache.gpuFramebuffer = nullptr;
+        gfxStateCache.gpuInputAssembler = nullptr;
+        gfxStateCache.glPrimitive = 0u;
+        gfxStateCache.reverseCW = false;
     }
 };
 

@@ -50,7 +50,6 @@ public:
     virtual PipelineLayout *createPipelineLayout() override;
     virtual PipelineState *createPipelineState() override;
     virtual void copyBuffersToTexture(const uint8_t *const *buffers, Texture *dst, const BufferTextureCopy *regions, uint count) override;
-    virtual void setImmediateMode(bool immediateMode) override;
 
     CC_INLINE GLES3GPUStateCache *stateCache() const { return _gpuStateCache; }
     CC_INLINE GLES3GPUCommandAllocator *cmdAllocator() const { return _gpuCmdAllocator; }
@@ -65,14 +64,22 @@ public:
         return false;
     }
 
+    CC_INLINE uint getThreadID() const { return _threadID; }
+
+protected:
+    virtual void bindRenderContext(bool bound) override;
+    virtual void bindDeviceContext(bool bound) override;
+
 private:
-    GLES3Context *_initContext = nullptr;
     GLES3Context *_renderContext = nullptr;
+    GLES3Context *_deviceContext = nullptr;
     GLES3GPUStateCache *_gpuStateCache = nullptr;
     GLES3GPUCommandAllocator *_gpuCmdAllocator = nullptr;
     GLES3GPUStagingBufferPool *_gpuStagingBufferPool = nullptr;
 
     StringArray _extensions;
+
+    uint _threadID = 0u;
 };
 
 } // namespace gfx

@@ -58,7 +58,6 @@ public:
     virtual PipelineLayout *createPipelineLayout() override;
     virtual PipelineState *createPipelineState() override;
     virtual void copyBuffersToTexture(const uint8_t *const *buffers, Texture *dst, const BufferTextureCopy *regions, uint count) override;
-    virtual void setImmediateMode(bool immediateMode) override;
 
     CC_INLINE bool useVAO() const { return _useVAO; }
     CC_INLINE bool useDrawInstanced() const { return _useDrawInstanced; }
@@ -78,12 +77,18 @@ public:
         return false;
     }
 
+    CC_INLINE uint getThreadID() const { return _threadID; }
+
+protected:
+    virtual void bindRenderContext(bool bound) override;
+    virtual void bindDeviceContext(bool bound) override;
+
 private:
 
     bool checkForETC2() const;
 
-    GLES2Context *_initContext = nullptr;
     GLES2Context *_renderContext = nullptr;
+    GLES2Context *_deviceContext = nullptr;
     GLES2GPUStateCache *_gpuStateCache = nullptr;
     GLES2GPUCommandAllocator *_gpuCmdAllocator = nullptr;
     GLES2GPUStagingBufferPool *_gpuStagingBufferPool = nullptr;
@@ -94,6 +99,8 @@ private:
     bool _useDrawInstanced = false;
     bool _useInstancedArrays = false;
     bool _useDiscardFramebuffer = false;
+
+    uint _threadID;
 };
 
 } // namespace gfx

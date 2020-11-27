@@ -9,14 +9,12 @@
     #include "cocos/bindings/event/EventDispatcher.h"
 #endif
 
-// #define CC_GFX_DEBUG
-
 namespace cc {
 namespace gfx {
 
-#if (CC_PLATFORM == CC_PLATFORM_WINDOWS)
+#if CC_DEBUG > 0
 
-void APIENTRY GLES3EGLDebugProc(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam) {
+void GLES3EGLDebugProc(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam) {
     String sourceDesc;
     switch (source) {
         case GL_DEBUG_SOURCE_API_KHR: sourceDesc = "API"; break;
@@ -216,7 +214,7 @@ bool GLES3Context::initialize(const ContextInfo &info) {
                 ctxAttribs[n++] = EGL_CONTEXT_MINOR_VERSION_KHR;
                 ctxAttribs[n++] = m;
 
-    #ifdef CC_GFX_DEBUG
+    #if CC_DEBUG > 0
                 ctxAttribs[n++] = EGL_CONTEXT_FLAGS_KHR;
                 ctxAttribs[n++] = EGL_CONTEXT_OPENGL_DEBUG_BIT_KHR;
     #endif
@@ -286,6 +284,8 @@ bool GLES3Context::initialize(const ContextInfo &info) {
         _depthStencilFmt = sharedCtx->getDepthStencilFormat();
         _majorVersion = sharedCtx->major_ver();
         _minorVersion = sharedCtx->minor_ver();
+        _extensions = sharedCtx->_extensions;
+        _isInitialized = sharedCtx->_isInitialized;
 
         bool hasKHRCreateCtx = CheckExtension(CC_TOSTR(EGL_KHR_create_context));
         if (!hasKHRCreateCtx) {
@@ -302,7 +302,7 @@ bool GLES3Context::initialize(const ContextInfo &info) {
             ctxAttribs[n++] = EGL_CONTEXT_MINOR_VERSION_KHR;
             ctxAttribs[n++] = _minorVersion;
 
-    #ifdef CC_GFX_DEBUG
+    #if CC_DEBUG > 0
             ctxAttribs[n++] = EGL_CONTEXT_FLAGS_KHR;
             ctxAttribs[n++] = EGL_CONTEXT_OPENGL_DEBUG_BIT_KHR;
     #endif
@@ -320,7 +320,7 @@ bool GLES3Context::initialize(const ContextInfo &info) {
         }
     }
 
-    return MakeCurrent();
+    return true;
 }
 
 void GLES3Context::destroy() {
@@ -365,6 +365,7 @@ void GLES3Context::present() {
 
 bool GLES3Context::MakeCurrent(bool bound) {
     if (!bound) {
+        CC_LOG_DEBUG("eglMakeCurrent() - UNBOUNDED, Context: 0x%p", this);
         return MakeCurrentImpl(false);
     }
 
@@ -388,7 +389,7 @@ bool GLES3Context::MakeCurrent(bool bound) {
             }
 #endif
 
-#if defined(CC_GFX_DEBUG)
+#if CC_DEBUG > 0
             glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_KHR);
             glDebugMessageControlKHR(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
             glDebugMessageCallbackKHR(GLES3EGLDebugProc, NULL);
