@@ -39,17 +39,15 @@ public:
     virtual void copyBuffersToTexture(const uint8_t *const *buffers, Texture *texture, const BufferTextureCopy *regions, uint count) override;
     virtual void execute(const CommandBuffer *const *cmdBuffs, uint32_t count) override;
 
-private:
+protected:
     void BindStates();
 
-private:
     GLES2CmdPackage *_cmdPackage = nullptr;
     GLES2GPUCommandAllocator *_gles2Allocator = nullptr;
     bool _isInRenderPass = false;
     GLES2GPUPipelineState *_curGPUPipelineState = nullptr;
     vector<GLES2GPUDescriptorSet *> _curGPUDescriptorSets;
     vector<const uint *> _curDynamicOffsets;
-    vector<uint> _curDynamicOffsetCounts;
     GLES2GPUInputAssembler *_curGPUInputAssember = nullptr;
     Viewport _curViewport;
     Rect _curScissor;

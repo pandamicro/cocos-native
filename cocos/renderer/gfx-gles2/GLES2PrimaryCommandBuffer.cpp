@@ -1,45 +1,45 @@
-#include "GLES3Std.h"
+#include "GLES2Std.h"
 
-#include "GLES3Buffer.h"
-#include "GLES3DescriptorSet.h"
-#include "GLES3Device.h"
-#include "GLES3Framebuffer.h"
-#include "GLES3InputAssembler.h"
-#include "GLES3PipelineState.h"
-#include "GLES3PrimaryCommandBuffer.h"
-#include "GLES3RenderPass.h"
-#include "GLES3Texture.h"
+#include "GLES2Buffer.h"
+#include "GLES2DescriptorSet.h"
+#include "GLES2Device.h"
+#include "GLES2Framebuffer.h"
+#include "GLES2InputAssembler.h"
+#include "GLES2PipelineState.h"
+#include "GLES2PrimaryCommandBuffer.h"
+#include "GLES2RenderPass.h"
+#include "GLES2Texture.h"
 
 namespace cc {
 namespace gfx {
 
-GLES3PrimaryCommandBuffer::GLES3PrimaryCommandBuffer(Device *device)
-: GLES3CommandBuffer(device) {
+GLES2PrimaryCommandBuffer::GLES2PrimaryCommandBuffer(Device *device)
+: GLES2CommandBuffer(device) {
 }
 
-GLES3PrimaryCommandBuffer::~GLES3PrimaryCommandBuffer() {
+GLES2PrimaryCommandBuffer::~GLES2PrimaryCommandBuffer() {
 }
 
-void GLES3PrimaryCommandBuffer::beginRenderPass(RenderPass *renderPass, Framebuffer *fbo, const Rect &renderArea, const Color *colors, float depth, int stencil) {
+void GLES2PrimaryCommandBuffer::beginRenderPass(RenderPass *renderPass, Framebuffer *fbo, const Rect &renderArea, const Color *colors, float depth, int stencil) {
     _isInRenderPass = true;
-    GLES3GPURenderPass *gpuRenderPass = ((GLES3RenderPass *)renderPass)->gpuRenderPass();
-    GLES3GPUFramebuffer *gpuFramebuffer = ((GLES3Framebuffer *)fbo)->gpuFBO();
+    GLES2GPURenderPass *gpuRenderPass = ((GLES2RenderPass *)renderPass)->gpuRenderPass();
+    GLES2GPUFramebuffer *gpuFramebuffer = ((GLES2Framebuffer *)fbo)->gpuFBO();
 
-    GLES3CmdFuncBeginRenderPass((GLES3Device *)_device, gpuRenderPass, gpuFramebuffer,
+    GLES2CmdFuncBeginRenderPass((GLES2Device *)_device, gpuRenderPass, gpuFramebuffer,
                                 renderArea, gpuRenderPass->colorAttachments.size(), colors, depth, stencil);
 }
 
-void GLES3PrimaryCommandBuffer::endRenderPass() {
-    GLES3CmdFuncEndRenderPass((GLES3Device *)_device);
+void GLES2PrimaryCommandBuffer::endRenderPass() {
+    GLES2CmdFuncEndRenderPass((GLES2Device *)_device);
     _isInRenderPass = false;
 }
 
-void GLES3PrimaryCommandBuffer::draw(InputAssembler *ia) {
+void GLES2PrimaryCommandBuffer::draw(InputAssembler *ia) {
     if ((_type == CommandBufferType::PRIMARY && _isInRenderPass) ||
         (_type == CommandBufferType::SECONDARY)) {
 
         if (_isStateInvalid) {
-            GLES3CmdFuncBindState((GLES3Device *)_device, _curGPUPipelineState, _curGPUInputAssember, _curGPUDescriptorSets, _curDynamicOffsets,
+            GLES2CmdFuncBindState((GLES2Device *)_device, _curGPUPipelineState, _curGPUInputAssember, _curGPUDescriptorSets, _curDynamicOffsets,
                                   _curViewport, _curScissor, _curLineWidth, false, _curDepthBias, _curBlendConstants, _curDepthBounds, _curStencilWriteMask, _curStencilCompareMask);
 
             _isStateInvalid = false;
@@ -47,7 +47,7 @@ void GLES3PrimaryCommandBuffer::draw(InputAssembler *ia) {
 
         DrawInfo drawInfo;
         ia->extractDrawInfo(drawInfo);
-        GLES3CmdFuncDraw((GLES3Device *)_device, drawInfo);
+        GLES2CmdFuncDraw((GLES2Device *)_device, drawInfo);
 
         ++_numDrawCalls;
         _numInstances += ia->getInstanceCount();
@@ -71,36 +71,36 @@ void GLES3PrimaryCommandBuffer::draw(InputAssembler *ia) {
     }
 }
 
-void GLES3PrimaryCommandBuffer::updateBuffer(Buffer *buff, const void *data, uint size, uint offset) {
+void GLES2PrimaryCommandBuffer::updateBuffer(Buffer *buff, const void *data, uint size, uint offset) {
     if ((_type == CommandBufferType::PRIMARY && !_isInRenderPass) ||
         (_type == CommandBufferType::SECONDARY)) {
 
-        GLES3GPUBuffer *gpuBuffer = ((GLES3Buffer *)buff)->gpuBuffer();
+        GLES2GPUBuffer *gpuBuffer = ((GLES2Buffer *)buff)->gpuBuffer();
         if (gpuBuffer) {
-            GLES3CmdFuncUpdateBuffer((GLES3Device *)_device, gpuBuffer, data, offset, size);
+            GLES2CmdFuncUpdateBuffer((GLES2Device *)_device, gpuBuffer, data, offset, size);
         }
     } else {
         CC_LOG_ERROR("Command 'updateBuffer' must be recorded outside a render pass.");
     }
 }
 
-void GLES3PrimaryCommandBuffer::copyBuffersToTexture(const uint8_t *const *buffers, Texture *texture, const BufferTextureCopy *regions, uint count) {
+void GLES2PrimaryCommandBuffer::copyBuffersToTexture(const uint8_t *const *buffers, Texture *texture, const BufferTextureCopy *regions, uint count) {
     if ((_type == CommandBufferType::PRIMARY && !_isInRenderPass) ||
         (_type == CommandBufferType::SECONDARY)) {
 
-        GLES3GPUTexture *gpuTexture = ((GLES3Texture *)texture)->gpuTexture();
+        GLES2GPUTexture *gpuTexture = ((GLES2Texture *)texture)->gpuTexture();
         if (gpuTexture) {
-            GLES3CmdFuncCopyBuffersToTexture((GLES3Device *)_device, buffers, gpuTexture, regions, count);
+            GLES2CmdFuncCopyBuffersToTexture((GLES2Device *)_device, buffers, gpuTexture, regions, count);
         }
     } else {
         CC_LOG_ERROR("Command 'copyBuffersToTexture' must be recorded outside a render pass.");
     }
 }
 
-void GLES3PrimaryCommandBuffer::execute(const CommandBuffer *const *cmdBuffs, uint32_t count) {
+void GLES2PrimaryCommandBuffer::execute(const CommandBuffer *const *cmdBuffs, uint32_t count) {
     for (uint i = 0; i < count; ++i) {
-        GLES3PrimaryCommandBuffer *cmdBuff = (GLES3PrimaryCommandBuffer *)cmdBuffs[i];
-        GLES3CmdFuncExecuteCmds((GLES3Device *)_device, cmdBuff->_cmdPackage);
+        GLES2PrimaryCommandBuffer *cmdBuff = (GLES2PrimaryCommandBuffer *)cmdBuffs[i];
+        GLES2CmdFuncExecuteCmds((GLES2Device *)_device, cmdBuff->_cmdPackage);
 
         _numDrawCalls += cmdBuff->getNumDrawCalls();
         _numInstances += cmdBuff->getNumInstances();

@@ -26,7 +26,7 @@ void GLES2Queue::submit(const CommandBuffer *const *cmdBuffs, uint count, Fence 
     if (!_isAsync) {
         for (uint i = 0; i < count; ++i) {
             GLES2CommandBuffer *cmdBuffer = (GLES2CommandBuffer *)cmdBuffs[i];
-            GLES2CmdFuncExecuteCmds((GLES2Device *)_device, cmdBuffer->_cmdPackage);
+//            GLES2CmdFuncExecuteCmds((GLES2Device *)_device, cmdBuffer->_cmdPackage);
             _numDrawCalls += cmdBuffer->_numDrawCalls;
             _numInstances += cmdBuffer->_numInstances;
             _numTriangles += cmdBuffer->_numTriangles;

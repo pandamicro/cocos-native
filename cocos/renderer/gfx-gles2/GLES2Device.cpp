@@ -2,6 +2,7 @@
 
 #include "GLES2Buffer.h"
 #include "GLES2CommandBuffer.h"
+#include "GLES2PrimaryCommandBuffer.h"
 #include "GLES2Context.h"
 #include "GLES2DescriptorSet.h"
 #include "GLES2DescriptorSetLayout.h"
@@ -220,7 +221,7 @@ void GLES2Device::setImmediateMode(bool immediateMode) {
 }
 
 CommandBuffer *GLES2Device::createCommandBuffer() {
-    return CC_NEW(GLES2CommandBuffer(this));
+    return CC_NEW(GLES2PrimaryCommandBuffer(this));
 }
 
 Fence *GLES2Device::createFence() {

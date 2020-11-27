@@ -73,7 +73,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallback(VkDebugReportFlagsEXT flags,
 
     if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT) {
         CC_LOG_ERROR("VError: %s: %s", layerPrefix, message);
-        CCASSERT(ALLOW_VALIDATION_ERRORS, "Validation Error");
+        CCASSERT(DISABLE_VALIDATION_ASSERTIONS, "Validation Error");
     } else if (flags & VK_DEBUG_REPORT_WARNING_BIT_EXT) {
         CC_LOG_ERROR("VWarning: %s: %s", layerPrefix, message);
     } else if (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT) {

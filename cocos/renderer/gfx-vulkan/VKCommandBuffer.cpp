@@ -34,6 +34,7 @@ bool CCVKCommandBuffer::initialize(const CommandBufferInfo &info) {
     uint setCount = ((CCVKDevice *)_device)->bindingMappingInfo().bufferOffsets.size();
     _curGPUDescriptorSets.resize(setCount);
     _curDynamicOffsets.resize(setCount);
+    _curDynamicOffsetCounts.resize(setCount);
 
     return true;
 }
@@ -54,9 +55,7 @@ void CCVKCommandBuffer::begin(RenderPass *renderPass, uint subpass, Framebuffer 
     _curGPUPipelineState = nullptr;
     _curGPUInputAssember = nullptr;
     _curGPUDescriptorSets.assign(_curGPUDescriptorSets.size(), nullptr);
-    for (size_t i = 0u; i < _curDynamicOffsets.size(); i++) {
-        _curDynamicOffsets[i].clear();
-    }
+    _curDynamicOffsetCounts.assign(_curDynamicOffsetCounts.size(), 0u);
     _firstDirtyDescriptorSet = UINT_MAX;
 
     _numDrawCalls = 0;
@@ -175,7 +174,8 @@ void CCVKCommandBuffer::bindDescriptorSet(uint set, DescriptorSet *descriptorSet
         }
     }
     if (dynamicOffsetCount) {
-        _curDynamicOffsets[set].assign(dynamicOffsets, dynamicOffsets + dynamicOffsetCount);
+        _curDynamicOffsets[set] = dynamicOffsets;
+        _curDynamicOffsetCounts[set] = dynamicOffsetCount;
         if (set < _firstDirtyDescriptorSet) _firstDirtyDescriptorSet = set;
     }
 }
@@ -431,8 +431,9 @@ void CCVKCommandBuffer::bindDescriptorSets() {
         for (uint i = 0u, offsetAcc = 0u; i < dirtyDescriptorSetCount; i++) {
             uint set = _firstDirtyDescriptorSet + i;
             uint offsetCount = pipelineLayout->dynamicOffsetOffsets[set + 1] - dynamicOffsetStartIndex;
-            if (_curDynamicOffsets[set].size() && offsetCount > 0) {
-                memcpy(dynamicOffsets + offsetAcc, _curDynamicOffsets[set].data(), offsetCount * sizeof(uint));
+            CCASSERT(_curDynamicOffsetCounts[set] == offsetCount, "dynamic offset count mismatch");
+            if (offsetCount > 0) {
+                memcpy(dynamicOffsets + offsetAcc, _curDynamicOffsets[set], offsetCount * sizeof(uint));
                 offsetAcc += offsetCount;
             }
         }

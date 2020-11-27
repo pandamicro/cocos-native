@@ -1,17 +1,17 @@
-#ifndef CC_GFXGLES3_PRIMARY_COMMAND_BUFFER_H_
-#define CC_GFXGLES3_PRIMARY_COMMAND_BUFFER_H_
+#ifndef CC_GFXGLES2_PRIMARY_COMMAND_BUFFER_H_
+#define CC_GFXGLES2_PRIMARY_COMMAND_BUFFER_H_
 
-#include "GLES3CommandBuffer.h"
+#include "GLES2CommandBuffer.h"
 
 namespace cc {
 namespace gfx {
 
-class CC_GLES3_API GLES3PrimaryCommandBuffer : public GLES3CommandBuffer {
-    friend class GLES3Queue;
+class CC_GLES2_API GLES2PrimaryCommandBuffer : public GLES2CommandBuffer {
+    friend class GLES2Queue;
 
 public:
-    GLES3PrimaryCommandBuffer(Device *device);
-    ~GLES3PrimaryCommandBuffer();
+    GLES2PrimaryCommandBuffer(Device *device);
+    ~GLES2PrimaryCommandBuffer();
 
     virtual void beginRenderPass(RenderPass *renderPass, Framebuffer *fbo, const Rect &renderArea, const Color *colors, float depth, int stencil) override;
     virtual void endRenderPass() override;
