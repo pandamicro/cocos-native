@@ -160,9 +160,6 @@ void CCVKBuffer::update(void *buffer, uint offset, uint size) {
     if (_buffer) {
         memcpy(_buffer + offset, buffer, size);
     }
-    /* *
-    CCVKCmdFuncUpdateBuffer((CCVKDevice *)_device, _gpuBuffer, buffer, offset, size);
-    /* */
     // This assumes the default command buffer will get submitted every frame,
     // which is true for now but may change in the future. This appoach gives us
     // the wiggle room to leverage immediate update vs. copy-upload strategies without
@@ -172,7 +169,6 @@ void CCVKBuffer::update(void *buffer, uint offset, uint size) {
     cmdBuff->begin();
     const CCVKGPUCommandBuffer *gpuCommandBuffer = ((CCVKCommandBuffer *)cmdBuff)->gpuCommandBuffer();
     CCVKCmdFuncUpdateBuffer((CCVKDevice *)_device, _gpuBuffer, buffer, offset, size, gpuCommandBuffer);
-    /* */
 }
 
 } // namespace gfx
