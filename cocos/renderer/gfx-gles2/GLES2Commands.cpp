@@ -120,7 +120,6 @@ GLenum MapGLInternalFormat(Format format) {
         case Format::ASTC_SRGBA_12x10: return GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x10_KHR;
         case Format::ASTC_SRGBA_12x12: return GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR;
 
-
         default: {
             CCASSERT(false, "Unsupported Format, convert to GL internal format failed.");
             return GL_RGBA;
@@ -1917,15 +1916,32 @@ void GLES2CmdFuncBindState(GLES2Device *device, GLES2GPUPipelineState *gpuPipeli
                     }
                 }
 
+                    // bind blend state
+                    if (cache->bs.isA2C != gpuPipelineState->bs.isA2C) {
+                        if (cache->bs.isA2C) {
+                            glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+                        } else {
+                            glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+                        }
+                        cache->bs.isA2C = gpuPipelineState->bs.isA2C;
                 if (gpuTexture->glWrapS != glWrapS) {
                     if (cache->texUint != unit) {
                         GL_CHECK(glActiveTexture(GL_TEXTURE0 + unit));
                         cache->texUint = unit;
                     }
+                    if (cache->bs.blendColor.x != gpuPipelineState->bs.blendColor.x ||
+                        cache->bs.blendColor.y != gpuPipelineState->bs.blendColor.y ||
+                        cache->bs.blendColor.z != gpuPipelineState->bs.blendColor.z ||
+                        cache->bs.blendColor.w != gpuPipelineState->bs.blendColor.w) {
                     GL_CHECK(glTexParameteri(gpuTexture->glTarget, GL_TEXTURE_WRAP_S, glWrapS));
                     gpuTexture->glWrapS = glWrapS;
                 }
 
+                        glBlendColor(gpuPipelineState->bs.blendColor.x,
+                                     gpuPipelineState->bs.blendColor.y,
+                                     gpuPipelineState->bs.blendColor.z,
+                                     gpuPipelineState->bs.blendColor.w);
+                        cache->bs.blendColor = gpuPipelineState->bs.blendColor;
                 if (gpuTexture->glWrapT != glWrapT) {
                     if (cache->texUint != unit) {
                         GL_CHECK(glActiveTexture(GL_TEXTURE0 + unit));
