@@ -17,6 +17,7 @@
     #define CC_VULKAN_API
 #endif
 
+#if CC_DEBUG > 0
 #define VK_CHECK(x)                                         \
     do {                                                    \
         VkResult err = x;                                   \
@@ -26,12 +27,8 @@
         }                                                   \
     } while (0)
 
-#define ASSERT_VK_HANDLE(handle)            \
-    do {                                    \
-        if ((handle) == VK_NULL_HANDLE) {   \
-            CC_LOG_ERROR("Handle is NULL"); \
-            CCASSERT(0);                    \
-        }                                   \
-    } while (0)
+#else
+#define VK_CHECK(x) x
+#endif
 
 #endif

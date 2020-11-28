@@ -18,3 +18,16 @@
 #endif
 
 #endif
+
+#if CC_DEBUG > 0
+#define GL_CHECK(x)                                         \
+    do {                                                    \
+        x; GLenum err = glGetError();                       \
+        if (err) {                                          \
+            CC_LOG_ERROR("Detected GL error: %d", err);     \
+            CCASSERT(0, "GL Error");                        \
+        }                                                   \
+    } while (0)
+#else
+#define GL_CHECK(x) x
+#endif
