@@ -45,11 +45,13 @@ public:
     virtual void updateBuffer(Buffer *buff, const void *data, uint size, uint offset) override;
     virtual void copyBuffersToTexture(const uint8_t *const *buffers, Texture *texture, const BufferTextureCopy *regions, uint count) override;
     virtual void execute(const CommandBuffer *const *cmdBuffs, uint32_t count) override;
+    
     CC_INLINE bool isCommandBufferBegan() const { return _commandBufferBegan; }
 
 private:
     void bindDescriptorSets();
     bool isRenderingEntireDrawable(const Rect &rect, const CCMTLRenderPass *renderPass);
+    id<CAMetalDrawable> getCurrentDrawable();
 
     CCMTLGPUPipelineState *_gpuPipelineState = nullptr;
     Viewport _currentViewport;
@@ -67,8 +69,9 @@ private:
     bool _indirectDrawSuppotred = false;
     bool _commandBufferBegan = false;
     CCMTLDevice *_mtlDevice = nullptr;
-    id<MTLCommandQueue> _mtlCommandQueue = nil;
     MTKView *_mtkView = nil;
+    id<CAMetalDrawable> _currDrawable = nil;
+    id<MTLCommandQueue> _mtlCommandQueue = nil;
     id<MTLCommandBuffer> _mtlCommandBuffer = nil;
     id<MTLRenderCommandEncoder> _mtlEncoder = nil;
     CCMTLGPUBuffer _gpuIndexBuffer;
