@@ -31,7 +31,7 @@ bool CCVKCommandBuffer::initialize(const CommandBufferInfo &info) {
     _gpuCommandBuffer->level = MapVkCommandBufferLevel(_type);
     _gpuCommandBuffer->queueFamilyIndex = ((CCVKQueue *)_queue)->gpuQueue()->queueFamilyIndex;
 
-    uint setCount = ((CCVKDevice *)_device)->bindingMappingInfo().bufferOffsets.size();
+    size_t setCount = ((CCVKDevice *)_device)->bindingMappingInfo().bufferOffsets.size();
     _curGPUDescriptorSets.resize(setCount);
     _curDynamicOffsets.resize(setCount);
     _curDynamicOffsetCounts.resize(setCount);
