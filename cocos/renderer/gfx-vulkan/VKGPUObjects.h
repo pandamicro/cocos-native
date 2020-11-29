@@ -537,7 +537,7 @@ private:
 /**
  * Staging buffer pool, based on multiple fix-sized VkBuffer blocks.
  */
-constexpr size_t chunkSize = 16 * 1024 * 1024; // 16M per block by default
+constexpr size_t chunkSize = 32 * 1024 * 1024; // 32M per block by default
 class CCVKGPUStagingBufferPool : public Object {
 public:
     CCVKGPUStagingBufferPool(CCVKGPUDevice *device)
