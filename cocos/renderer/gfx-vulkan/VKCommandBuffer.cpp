@@ -104,7 +104,7 @@ void CCVKCommandBuffer::beginRenderPass(RenderPass *renderPass, Framebuffer *fbo
 
     if (attachmentCount) {
         for (size_t i = 0u; i < attachmentCount - 1; i++) {
-            clearValues[i].color = {colors[i].x, colors[i].y, colors[i].z, colors[i].w};
+            clearValues[i].color = {{colors[i].x, colors[i].y, colors[i].z, colors[i].w}};
         }
         clearValues[attachmentCount - 1].depthStencil = {depth, (uint)stencil};
     }

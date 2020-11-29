@@ -1,9 +1,12 @@
 #include "GLES2Std.h"
 #include "GLES2Context.h"
 #include "gles2w.h"
-#import <QuartzCore/CAEAGLLayer.h>
+
+#if TARGET_OS_OSX
+#import <QuartzCore/CAOpenGLLayer.h>
+#else
 #import <UIKit/UIScreen.h>
-#import <QuartzCore/QuartzCore.h>
+#endif
 
 namespace cc {
 namespace gfx {
@@ -37,40 +40,44 @@ bool GLES2Context::initialize(const ContextInfo &info) {
             return false;
     } else {
         GLES2Context* sharedCtx = (GLES2Context*)info.sharedCtx;
+        _majorVersion = sharedCtx->_majorVersion;
+        _defaultFBO = sharedCtx->_defaultFBO;
+        _defaultColorBuffer = sharedCtx->_defaultColorBuffer;
+        _defaultDepthStencilBuffer = sharedCtx->_defaultDepthStencilBuffer;
+        
         EAGLContext* eagl_shared_context = (EAGLContext*)sharedCtx->eagl_shared_ctx();
         EAGLContext* eagl_context = [[EAGLContext alloc] initWithAPI: [eagl_shared_context API] sharegroup: [eagl_shared_context sharegroup]];
         if (!eagl_context) {
             CC_LOG_ERROR("Create EGL context with share context [0x%p] failed.", eagl_shared_context);
-
-            _eaglContext = (intptr_t)eagl_context;
-            _eaglSharedContext = (intptr_t)eagl_shared_context;
-
             return false;
         }
+
+        _eaglContext = (intptr_t)eagl_context;
+        _eaglSharedContext = (intptr_t)eagl_shared_context;
     }
 
     _colorFmt = Format::RGBA8;
     _depthStencilFmt = Format::D24S8;
 
-    if (!MakeCurrent())
-        return false;
-
-    return createCustomFrameBuffer();
+    return true;
 }
 
-bool GLES2Context::createCustomFrameBuffer()
-{
+bool GLES2Context::createCustomFrameBuffer() {
+    if (_defaultFBO) {
+        glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
+        glBindRenderbuffer(GL_RENDERBUFFER, _defaultColorBuffer);
+        return true;
+    }
+
     glGenFramebuffers(1, &_defaultFBO);
-    if (0 == _defaultFBO)
-    {
+    if (0 == _defaultFBO) {
         CC_LOG_ERROR("Can not create default frame buffer");
         return false;
     }
     glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
 
     glGenRenderbuffers(1, &_defaultColorBuffer);
-    if (0 == _defaultColorBuffer)
-    {
+    if (0 == _defaultColorBuffer) {
         CC_LOG_ERROR("Can not create default color buffer");
         return false;
     }
@@ -80,8 +87,7 @@ bool GLES2Context::createCustomFrameBuffer()
 
     //get the storage from iOS so it can be displayed in the view
     if (! [(EAGLContext*)_eaglContext renderbufferStorage:GL_RENDERBUFFER
-                                              fromDrawable:eaglLayer])
-    {
+                                              fromDrawable:eaglLayer]) {
         CC_LOG_ERROR("Attaches EAGLDrawable as storage for the OpenGL ES renderbuffer object failed.");
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
         glDeleteRenderbuffers(1, &_defaultColorBuffer);
@@ -181,7 +187,8 @@ void GLES2Context::present() {
 }
 
 bool GLES2Context::MakeCurrentImpl(bool bound) {
-  return [EAGLContext setCurrentContext: bound ? (EAGLContext*)_eaglContext : nil];
+    if (!bound) return [EAGLContext setCurrentContext: nil];
+    return [EAGLContext setCurrentContext: (EAGLContext*)_eaglContext] && createCustomFrameBuffer();
 }
 
 #endif

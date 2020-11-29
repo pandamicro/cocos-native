@@ -216,15 +216,14 @@ bool GLES2Context::initialize(const ContextInfo &info) {
 
         bool hasKHRCreateCtx = CheckExtension(CC_TOSTR(EGL_KHR_create_context));
         if (hasKHRCreateCtx) {
-            ctxAttribs[n++] = EGL_CONTEXT_MAJOR_VERSION_KHR;
-            ctxAttribs[n++] = _majorVersion;
-            ctxAttribs[n++] = EGL_CONTEXT_MINOR_VERSION_KHR;
-            ctxAttribs[n++] = _minorVersion;
-
     #if CC_DEBUG > 0
             ctxAttribs[n++] = EGL_CONTEXT_FLAGS_KHR;
             ctxAttribs[n++] = EGL_CONTEXT_OPENGL_DEBUG_BIT_KHR;
     #endif
+            ctxAttribs[n++] = EGL_CONTEXT_MAJOR_VERSION_KHR;
+            ctxAttribs[n++] = _majorVersion;
+            ctxAttribs[n++] = EGL_CONTEXT_MINOR_VERSION_KHR;
+            ctxAttribs[n++] = _minorVersion;
             ctxAttribs[n] = EGL_NONE;
         } else {
             ctxAttribs[n++] = EGL_CONTEXT_CLIENT_VERSION;
@@ -392,7 +391,7 @@ bool GLES2Context::MakeCurrent(bool bound) {
             }
 #endif
 
-#if CC_DEBUG > 0
+#if CC_DEBUG > 0 && CC_PLATFORM != CC_PLATFORM_MAC_IOS
             glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_KHR);
             glDebugMessageControlKHR(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
             glDebugMessageCallbackKHR(GLES2EGLDebugProc, NULL);

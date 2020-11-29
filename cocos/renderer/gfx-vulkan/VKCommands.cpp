@@ -220,7 +220,7 @@ void CCVKCmdFuncCreateRenderPass(CCVKDevice *device, CCVKGPURenderPass *gpuRende
     }
 
     const size_t subpassCount = gpuRenderPass->subPasses.size();
-    vector<VkSubpassDescription> subpassDescriptions(1, {VK_PIPELINE_BIND_POINT_GRAPHICS});
+    vector<VkSubpassDescription> subpassDescriptions(1);
     vector<VkAttachmentReference> attachmentReferences;
 
     if (subpassCount) { // pass on user-specified subpasses
