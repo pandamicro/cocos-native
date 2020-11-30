@@ -28,7 +28,7 @@ bool GLES3Context::initialize(const ContextInfo &info) {
           CC_LOG_ERROR("Create EAGL context failed.");
           return false;
         }
-
+        
         _eaglContext = (intptr_t)eagl_context;
         _eaglSharedContext = (intptr_t)eagl_context;
         _majorVersion = 3;

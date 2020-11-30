@@ -1438,7 +1438,7 @@ void GLES3CmdFuncBeginRenderPass(GLES3Device *device, GLES3GPURenderPass *gpuRen
             GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, gpuFramebuffer->glFramebuffer));
             cache->glFramebuffer = gpuFramebuffer->glFramebuffer;
             // render targets are drawn with flipped-Y
-            gfxStateCache.reverseCW = !!gpuFramebuffer->glFramebuffer;
+            gfxStateCache.reverseCW = gpuFramebuffer->isOffscreen;
         }
 
         if (cache->viewport.left != renderArea.x ||
@@ -1506,8 +1506,9 @@ void GLES3CmdFuncBeginRenderPass(GLES3Device *device, GLES3GPURenderPass *gpuRen
                 switch (gpuRenderPass->depthStencilAttachment.depthLoadOp) {
                     case LoadOp::LOAD: break; // GL default behaviour
                     case LoadOp::CLEAR: {
-                        GL_CHECK(glDepthMask(true));
-                        cache->dss.depthWrite = true;
+                        if (!cache->dss.depthWrite) {
+                            GL_CHECK(glDepthMask(true));
+                        }
                         GL_CHECK(glClearDepthf(clearDepth));
                         glClears |= GL_DEPTH_BUFFER_BIT;
                         break;
@@ -1564,7 +1565,7 @@ void GLES3CmdFuncBeginRenderPass(GLES3Device *device, GLES3GPURenderPass *gpuRen
             }
         }
 
-        if ((glClears & GL_COLOR_BUFFER_BIT) && !cache->dss.depthWrite) {
+        if ((glClears & GL_DEPTH_BUFFER_BIT) && !cache->dss.depthWrite) {
             GL_CHECK(glDepthMask(false));
         }
 
@@ -1921,7 +1922,7 @@ void GLES3CmdFuncBindState(GLES3Device *device, GLES3GPUPipelineState *gpuPipeli
     } // if
 
     // bind vao
-    if (gpuInputAssembler && gpuPipelineState->gpuShader &&
+    if (gpuInputAssembler && gpuPipelineState && gpuPipelineState->gpuShader &&
         (isShaderChanged || gpuInputAssembler != gfxStateCache.gpuInputAssembler)) {
         gfxStateCache.gpuInputAssembler = gpuInputAssembler;
         if (USE_VAO) {

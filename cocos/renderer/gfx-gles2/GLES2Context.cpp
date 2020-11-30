@@ -397,49 +397,49 @@ bool GLES2Context::MakeCurrent(bool bound) {
             glDebugMessageCallbackKHR(GLES2EGLDebugProc, NULL);
 #endif
 
-            //////////////////////////////////////////////////////////////////////////
-
-            glPixelStorei(GL_PACK_ALIGNMENT, 1);
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-            glActiveTexture(GL_TEXTURE0);
-
-            //////////////////////////////////////////////////////////////////////////
-
-            glEnable(GL_SCISSOR_TEST);
-            glEnable(GL_CULL_FACE);
-            glCullFace(GL_BACK);
-
-            glFrontFace(GL_CCW);
-
-            //glDisable(GL_MULTISAMPLE);
-
-            //////////////////////////////////////////////////////////////////////////
-            // DepthStencilState
-            glEnable(GL_DEPTH_TEST);
-            glDepthMask(GL_TRUE);
-            glDepthFunc(GL_LESS);
-
-            glStencilFuncSeparate(GL_FRONT, GL_ALWAYS, 1, 0xffffffff);
-            glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_KEEP);
-            glStencilMaskSeparate(GL_FRONT, 0xffffffff);
-            glStencilFuncSeparate(GL_BACK, GL_ALWAYS, 1, 0xffffffff);
-            glStencilOpSeparate(GL_BACK, GL_KEEP, GL_KEEP, GL_KEEP);
-            glStencilMaskSeparate(GL_BACK, 0xffffffff);
-
-            glDisable(GL_STENCIL_TEST);
-
-            //////////////////////////////////////////////////////////////////////////
-            // BlendState
-
-            glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
-            glDisable(GL_BLEND);
-            glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
-            glBlendFuncSeparate(GL_ONE, GL_ZERO, GL_ONE, GL_ZERO);
-            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-            glBlendColor((GLclampf)0.0f, (GLclampf)0.0f, (GLclampf)0.0f, (GLclampf)0.0f);
-
             _isInitialized = true;
         }
+
+        //////////////////////////////////////////////////////////////////////////
+
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glActiveTexture(GL_TEXTURE0);
+
+        //////////////////////////////////////////////////////////////////////////
+
+        glEnable(GL_SCISSOR_TEST);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+
+        glFrontFace(GL_CCW);
+
+        //glDisable(GL_MULTISAMPLE);
+
+        //////////////////////////////////////////////////////////////////////////
+        // DepthStencilState
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LESS);
+
+        glStencilFuncSeparate(GL_FRONT, GL_ALWAYS, 1, 0xffffffff);
+        glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_KEEP);
+        glStencilMaskSeparate(GL_FRONT, 0xffffffff);
+        glStencilFuncSeparate(GL_BACK, GL_ALWAYS, 1, 0xffffffff);
+        glStencilOpSeparate(GL_BACK, GL_KEEP, GL_KEEP, GL_KEEP);
+        glStencilMaskSeparate(GL_BACK, 0xffffffff);
+
+        glDisable(GL_STENCIL_TEST);
+
+        //////////////////////////////////////////////////////////////////////////
+        // BlendState
+
+        glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+        glDisable(GL_BLEND);
+        glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+        glBlendFuncSeparate(GL_ONE, GL_ZERO, GL_ONE, GL_ZERO);
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        glBlendColor((GLclampf)0.0f, (GLclampf)0.0f, (GLclampf)0.0f, (GLclampf)0.0f);
 
         CC_LOG_DEBUG("eglMakeCurrent() - SUCCEEDED, Context: 0x%p", this);
         return true;

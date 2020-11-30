@@ -292,15 +292,12 @@ public:
     RasterizerState rs;
     DepthStencilState dss;
     BlendState bs;
-    BlendTargetList bt;
     bool isCullFaceEnabled = true;
     bool isStencilTestEnabled = false;
     map<String, uint> texUnitCacheMap;
     GLES2ObjectCache gfxStateCache;
 
     void initialize(size_t texUnits, size_t vertexAttributes) {
-        bt.resize(1);
-        bs.targets.push_back(bt[0]);
         glTextures.resize(texUnits, 0u);
         glEnabledAttribLocs.resize(vertexAttributes, false);
         glCurrentAttribLocs.resize(vertexAttributes, false);
@@ -320,6 +317,12 @@ public:
         glReadFBO = 0;
         isCullFaceEnabled = true;
         isStencilTestEnabled = false;
+
+        viewport = Viewport();
+        scissor = Rect();
+        rs = RasterizerState();
+        dss = DepthStencilState();
+        bs = BlendState();
 
         gfxStateCache.gpuPipelineState = nullptr;
         gfxStateCache.numClearColors = 0u;
