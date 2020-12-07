@@ -8,36 +8,36 @@ namespace gfx {
 
 class GLES2Device;
 
-struct GLES2DepthBias {
+struct GLES2DepthBias final {
     float constant = 0.0f;
     float clamp = 0.0f;
     float slope = 0.0f;
 };
 
-struct GLES2DepthBounds {
+struct GLES2DepthBounds final {
     float minBounds = 0.0f;
     float maxBounds = 0.0f;
 };
 
-struct GLES2StencilWriteMask {
+struct GLES2StencilWriteMask final {
     StencilFace face = StencilFace::FRONT;
     uint writeMask = 0;
 };
 
-struct GLES2StencilCompareMask {
+struct GLES2StencilCompareMask final {
     StencilFace face = StencilFace::FRONT;
     int refrence = 0;
     uint compareMask = 0;
 };
 
-struct GLES2TextureSubres {
+struct GLES2TextureSubres final {
     uint baseMipLevel = 0;
     uint levelCount = 1;
     uint baseArrayLayer = 0;
     uint layerCount = 1;
 };
 
-struct GLES2BufferTextureCopy {
+struct GLES2BufferTextureCopy final {
     uint buffOffset = 0;
     uint buffStride = 0;
     uint buffTexHeight = 0;
@@ -46,7 +46,7 @@ struct GLES2BufferTextureCopy {
     GLES2TextureSubres texSubres;
 };
 
-class GLES2CmdBeginRenderPass : public GFXCmd {
+class GLES2CmdBeginRenderPass final : public GFXCmd {
 public:
     GLES2GPURenderPass *gpuRenderPass = nullptr;
     GLES2GPUFramebuffer *gpuFBO = nullptr;
@@ -76,7 +76,7 @@ enum class GLES2State {
     COUNT,
 };
 
-class GLES2CmdBindStates : public GFXCmd {
+class GLES2CmdBindStates final : public GFXCmd {
 public:
     GLES2GPUPipelineState *gpuPipelineState = nullptr;
     GLES2GPUInputAssembler *gpuInputAssembler = nullptr;
@@ -102,7 +102,7 @@ public:
     }
 };
 
-class GLES2CmdDraw : public GFXCmd {
+class GLES2CmdDraw final : public GFXCmd {
 public:
     DrawInfo drawInfo;
 
@@ -110,7 +110,7 @@ public:
     virtual void clear() override {}
 };
 
-class GLES2CmdUpdateBuffer : public GFXCmd {
+class GLES2CmdUpdateBuffer final : public GFXCmd {
 public:
     GLES2GPUBuffer *gpuBuffer = nullptr;
     uint8_t *buffer = nullptr;
@@ -125,7 +125,7 @@ public:
     }
 };
 
-class GLES2CmdCopyBufferToTexture : public GFXCmd {
+class GLES2CmdCopyBufferToTexture final : public GFXCmd {
 public:
     GLES2GPUTexture *gpuTexture = nullptr;
     const BufferTextureCopy *regions = nullptr;
@@ -142,7 +142,7 @@ public:
     }
 };
 
-class GLES2CmdPackage : public Object {
+class GLES2CmdPackage final : public Object {
 public:
     CachedArray<GFXCmdType> cmds;
     CachedArray<GLES2CmdBeginRenderPass *> beginRenderPassCmds;
@@ -152,7 +152,7 @@ public:
     CachedArray<GLES2CmdCopyBufferToTexture *> copyBufferToTextureCmds;
 };
 
-class GLES2GPUCommandAllocator : public Object {
+class GLES2GPUCommandAllocator final : public Object {
 public:
     CommandPool<GLES2CmdBeginRenderPass> beginRenderPassCmdPool;
     CommandPool<GLES2CmdBindStates> bindStatesCmdPool;

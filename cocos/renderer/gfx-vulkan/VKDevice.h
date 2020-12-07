@@ -21,7 +21,7 @@ class CCVKGPUDescriptorSetPool;
 class CCVKGPUCommandBufferPool;
 class CCVKGPUStagingBufferPool;
 
-class CC_VULKAN_API CCVKDevice : public Device {
+class CC_VULKAN_API CCVKDevice final : public Device {
 public:
     CCVKDevice();
     ~CCVKDevice();

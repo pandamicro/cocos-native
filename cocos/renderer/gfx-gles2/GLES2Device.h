@@ -17,7 +17,7 @@ class GLES2GPUStateCache;
 class GLES2GPUCommandAllocator;
 class GLES2GPUStagingBufferPool;
 
-class CC_GLES2_API GLES2Device : public Device {
+class CC_GLES2_API GLES2Device final : public Device {
 public:
     GLES2Device();
     ~GLES2Device();

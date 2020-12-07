@@ -7,7 +7,7 @@ namespace gfx {
 class GLES2GPUBuffer;
 class GLES2GPUBufferView;
 
-class CC_GLES2_API GLES2Buffer : public Buffer {
+class CC_GLES2_API GLES2Buffer final : public Buffer {
 public:
     GLES2Buffer(Device *device);
     ~GLES2Buffer();

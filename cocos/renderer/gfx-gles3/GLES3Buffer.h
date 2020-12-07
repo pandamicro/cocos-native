@@ -6,7 +6,7 @@ namespace gfx {
 
 class GLES3GPUBuffer;
 
-class CC_GLES3_API GLES3Buffer : public Buffer {
+class CC_GLES3_API GLES3Buffer final : public Buffer {
 public:
     GLES3Buffer(Device *device);
     ~GLES3Buffer();

@@ -7,7 +7,7 @@ namespace gfx {
 class CCVKGPUBuffer;
 class CCVKGPUBufferView;
 
-class CC_VULKAN_API CCVKBuffer : public Buffer {
+class CC_VULKAN_API CCVKBuffer final : public Buffer {
 public:
     CCVKBuffer(Device *device);
     ~CCVKBuffer();

@@ -6,7 +6,7 @@
 namespace cc {
 namespace gfx {
 
-class CC_VULKAN_API CCVKCommandBuffer : public CommandBuffer {
+class CC_VULKAN_API CCVKCommandBuffer final : public CommandBuffer {
 public:
     CCVKCommandBuffer(Device *device);
     ~CCVKCommandBuffer();

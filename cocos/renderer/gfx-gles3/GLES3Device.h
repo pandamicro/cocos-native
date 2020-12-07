@@ -9,7 +9,7 @@ class GLES3GPUStateCache;
 class GLES3GPUCommandAllocator;
 class GLES3GPUStagingBufferPool;
 
-class CC_GLES3_API GLES3Device : public Device {
+class CC_GLES3_API GLES3Device final : public Device {
 public:
     GLES3Device();
     ~GLES3Device();
