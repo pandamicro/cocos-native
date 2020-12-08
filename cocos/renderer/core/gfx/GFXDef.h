@@ -99,6 +99,7 @@ enum class Feature {
     LINE_WIDTH,
     STENCIL_WRITE_MASK,
     STENCIL_COMPARE_MASK,
+    MULTITHREADED_SUBMISSION,
     COUNT,
 };
 

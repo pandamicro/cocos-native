@@ -188,6 +188,7 @@ bool CCVKDevice::initialize(const DeviceInfo &info) {
     _features[(uint)Feature::LINE_WIDTH] = true;
     _features[(uint)Feature::STENCIL_COMPARE_MASK] = true;
     _features[(uint)Feature::STENCIL_WRITE_MASK] = true;
+    _features[(uint)Feature::MULTITHREADED_SUBMISSION] = true;
 
     _gpuDevice->useMultiDrawIndirect = deviceFeatures.multiDrawIndirect;
     _gpuDevice->useDescriptorUpdateTemplate = checkExtension(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
@@ -297,9 +298,9 @@ bool CCVKDevice::initialize(const DeviceInfo &info) {
         _gpuStagingBufferPools.push_back(CC_NEW(CCVKGPUStagingBufferPool(_gpuDevice)));
 
         _gpuTransportHubs[i]->link(((CCVKQueue *)_queue)->gpuQueue(),
-            _gpuFencePools[i],
-            _gpuCommandBufferPools[i],
-            _gpuStagingBufferPools[i]);
+                                   _gpuFencePools[i],
+                                   _gpuCommandBufferPools[i],
+                                   _gpuStagingBufferPools[i]);
     }
     _gpuDescriptorHub = CC_NEW(CCVKGPUDescriptorHub(_gpuDevice));
     _gpuSemaphorePool = CC_NEW(CCVKGPUSemaphorePool(_gpuDevice));
@@ -398,7 +399,7 @@ void CCVKDevice::destroy() {
     CC_SAFE_DELETE(_gpuSemaphorePool);
     CC_SAFE_DELETE(_gpuDescriptorHub);
 
-    uint backBufferCount = ((CCVKContext*)_context)->gpuContext()->swapchainCreateInfo.minImageCount;
+    uint backBufferCount = ((CCVKContext *)_context)->gpuContext()->swapchainCreateInfo.minImageCount;
     for (uint i = 0u; i < backBufferCount; i++) {
         _gpuRecycleBins[i]->clear();
 
@@ -493,7 +494,7 @@ void CCVKDevice::acquire() {
     }
 
     // reset everything only when no pending commands
-    if (!((CCVKCommandBuffer *)_cmdBuff)->gpuCommandBuffer()->began) {
+    if (gpuTransportHub()->empty()) {
         gpuFencePool()->reset();
         gpuRecycleBin()->clear();
         gpuDescriptorSetPool()->reset();
@@ -588,11 +589,6 @@ PipelineState *CCVKDevice::createPipelineState() {
 }
 
 void CCVKDevice::copyBuffersToTexture(const uint8_t *const *buffers, Texture *dst, const BufferTextureCopy *regions, uint count) {
-    // This assumes the default command buffer will get submitted every frame,
-    // which is true for now but may change in the future. This appoach gives us
-    // the wiggle room to leverage immediate update vs. copy-upload strategies without
-    // breaking compatabilities. When we reached some conclusion on this subject,
-    // getting rid of this interface all together might become a better option.
     _cmdBuff->begin();
     const CCVKGPUCommandBuffer *gpuCommandBuffer = ((CCVKCommandBuffer *)_cmdBuff)->gpuCommandBuffer();
     CCVKCmdFuncCopyBuffersToTexture(this, buffers, ((CCVKTexture *)dst)->gpuTexture(), regions, count, gpuCommandBuffer);

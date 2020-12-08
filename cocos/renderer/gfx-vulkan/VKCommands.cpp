@@ -637,10 +637,10 @@ void CCVKCmdFuncUpdateBuffer(CCVKDevice *device, CCVKGPUBuffer *gpuBuffer, const
         sizeToUpload = size;
     }
 
-    if (!cmdBuffer && gpuBuffer->mappedData) {
-        device->gpuTransportHub()->checkIn(gpuBuffer->mappedData + offset, dataToUpload, sizeToUpload);
-        return;
-    }
+//    if (!cmdBuffer && gpuBuffer->mappedData) {
+//        device->gpuTransportHub()->checkIn(gpuBuffer->mappedData + offset, dataToUpload, sizeToUpload);
+//        return;
+//    }
 
     CCVKGPUBuffer stagingBuffer;
     stagingBuffer.size = sizeToUpload;
@@ -648,7 +648,7 @@ void CCVKCmdFuncUpdateBuffer(CCVKDevice *device, CCVKGPUBuffer *gpuBuffer, const
     memcpy(stagingBuffer.mappedData, dataToUpload, sizeToUpload);
 
     VkBufferCopy region{stagingBuffer.startOffset, gpuBuffer->startOffset + offset, sizeToUpload};
-    if (cmdBuffer) {
+    auto upload = [&stagingBuffer, &gpuBuffer, &region](const CCVKGPUCommandBuffer *cmdBuffer) {
         vkCmdCopyBuffer(cmdBuffer->vkCommandBuffer, stagingBuffer.vkBuffer, gpuBuffer->vkBuffer, 1, &region);
 
         // guard against RAW hazard
@@ -661,18 +661,17 @@ void CCVKCmdFuncUpdateBuffer(CCVKDevice *device, CCVKGPUBuffer *gpuBuffer, const
         barrier.offset = region.dstOffset;
         barrier.size = region.size;
         vkCmdPipelineBarrier(cmdBuffer->vkCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, gpuBuffer->targetStage, 0, 0, nullptr, 1, &barrier, 0, nullptr);
-
+    };
+    
+    if (cmdBuffer) {
+        upload(cmdBuffer);
     } else {
-        device->gpuTransportHub()->checkIn([&](const CCVKGPUCommandBuffer *cmdBuff) {
-            vkCmdCopyBuffer(cmdBuff->vkCommandBuffer, stagingBuffer.vkBuffer, gpuBuffer->vkBuffer, 1, &region);
-        });
+        device->gpuTransportHub()->checkIn(upload);
     }
 }
 
 void CCVKCmdFuncCopyBuffersToTexture(CCVKDevice *device, const uint8_t *const *buffers, CCVKGPUTexture *gpuTexture,
                                      const BufferTextureCopy *regions, uint count, const CCVKGPUCommandBuffer *cmdBuff) {
-    //bool isCompressed = GFX_FORMAT_INFOS[(int)gpuTexture->format].isCompressed;
-
     VkImageMemoryBarrier barriers[2]{};
     barriers[0].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barriers[0].image = gpuTexture->vkImage;

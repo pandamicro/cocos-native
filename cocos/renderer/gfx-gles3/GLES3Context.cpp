@@ -88,12 +88,12 @@ bool GLES3Context::initialize(const ContextInfo &info) {
             return false;
         }
 
-        _eglDisplay = eglGetDisplay(_nativeDisplay);
+        EGL_CHECK(_eglDisplay = eglGetDisplay(_nativeDisplay));
         if (_eglDisplay == EGL_NO_DISPLAY) {
-            _eglDisplay = eglGetDisplay((EGLNativeDisplayType)EGL_DEFAULT_DISPLAY);
+            EGL_CHECK(_eglDisplay = eglGetDisplay((EGLNativeDisplayType)EGL_DEFAULT_DISPLAY));
         }
     #else
-        _eglDisplay = eglGetDisplay((EGLNativeDisplayType)EGL_DEFAULT_DISPLAY);
+        EGL_CHECK(_eglDisplay = eglGetDisplay((EGLNativeDisplayType)EGL_DEFAULT_DISPLAY));
     #endif
         // If a display still couldn't be obtained, return an error.
         if (_eglDisplay == EGL_NO_DISPLAY) {
@@ -111,7 +111,7 @@ bool GLES3Context::initialize(const ContextInfo &info) {
         //    Make OpenGL ES the current API.
         //    EGL needs a way to know that any subsequent EGL calls are going to be affecting OpenGL ES,
         //    rather than any other API (such as OpenVG).
-        eglBindAPI(EGL_OPENGL_ES_API);
+        EGL_CHECK(eglBindAPI(EGL_OPENGL_ES_API));
 
         if (!gles3wInit()) {
             return false;
@@ -189,7 +189,7 @@ bool GLES3Context::initialize(const ContextInfo &info) {
         ANativeWindow_setBuffersGeometry((ANativeWindow *)_windowHandle, width, height, nFmt);
     #endif
 
-        _eglSurface = eglCreateWindowSurface(_eglDisplay, _eglConfig, (EGLNativeWindowType)_windowHandle, NULL);
+        EGL_CHECK(_eglSurface = eglCreateWindowSurface(_eglDisplay, _eglConfig, (EGLNativeWindowType)_windowHandle, NULL));
         if (_eglSurface == EGL_NO_SURFACE) {
             CC_LOG_ERROR("Window surface created failed.");
             return false;
@@ -198,7 +198,7 @@ bool GLES3Context::initialize(const ContextInfo &info) {
         //String eglVendor = eglQueryString(_eglDisplay, EGL_VENDOR);
         //String eglVersion = eglQueryString(_eglDisplay, EGL_VERSION);
 
-        _extensions = StringUtil::Split((const char *)eglQueryString(_eglDisplay, EGL_EXTENSIONS), " ");
+        EGL_CHECK(_extensions = StringUtil::Split((const char *)eglQueryString(_eglDisplay, EGL_EXTENSIONS), " "));
 
         _majorVersion = 3;
         _minorVersion = 0;
@@ -220,7 +220,7 @@ bool GLES3Context::initialize(const ContextInfo &info) {
     #endif
                 ctxAttribs[n] = EGL_NONE;
 
-                _eglContext = eglCreateContext(_eglDisplay, _eglConfig, NULL, ctxAttribs);
+                EGL_CHECK(_eglContext = eglCreateContext(_eglDisplay, _eglConfig, NULL, ctxAttribs));
                 if (_eglContext) {
                     _minorVersion = m;
                     break;
@@ -230,7 +230,7 @@ bool GLES3Context::initialize(const ContextInfo &info) {
             ctxAttribs[n++] = EGL_CONTEXT_CLIENT_VERSION;
             ctxAttribs[n++] = _majorVersion;
             ctxAttribs[n] = EGL_NONE;
-            _eglContext = eglCreateContext(_eglDisplay, _eglConfig, NULL, ctxAttribs);
+            EGL_CHECK(_eglContext = eglCreateContext(_eglDisplay, _eglConfig, NULL, ctxAttribs));
         }
 
         if (!_eglContext) {
@@ -260,7 +260,7 @@ bool GLES3Context::initialize(const ContextInfo &info) {
             uint height = _device->getHeight();
             ANativeWindow_setBuffersGeometry((ANativeWindow *)_windowHandle, width, height, nFmt);
 
-            _eglSurface = eglCreateWindowSurface(_eglDisplay, _eglConfig, (EGLNativeWindowType)_windowHandle, NULL);
+            EGL_CHECK(_eglSurface = eglCreateWindowSurface(_eglDisplay, _eglConfig, (EGLNativeWindowType)_windowHandle, NULL));
             if (_eglSurface == EGL_NO_SURFACE) {
                 CC_LOG_ERROR("Recreate window surface failed.");
                 return;
@@ -313,7 +313,7 @@ bool GLES3Context::initialize(const ContextInfo &info) {
 
         ctxAttribs[n] = EGL_NONE;
 
-        _eglContext = eglCreateContext(_eglDisplay, _eglConfig, _eglSharedContext, ctxAttribs);
+        EGL_CHECK(_eglContext = eglCreateContext(_eglDisplay, _eglConfig, _eglSharedContext, ctxAttribs));
         if (!_eglContext) {
             CC_LOG_ERROR("Create EGL context with share context [0x%p] failed.", _eglSharedContext);
             return false;
@@ -325,16 +325,16 @@ bool GLES3Context::initialize(const ContextInfo &info) {
 
 void GLES3Context::destroy() {
     if (_eglContext != EGL_NO_CONTEXT) {
-        eglDestroyContext(_eglDisplay, _eglContext);
+        EGL_CHECK(eglDestroyContext(_eglDisplay, _eglContext));
         _eglContext = EGL_NO_CONTEXT;
     }
 
     if (_eglSurface != EGL_NO_SURFACE) {
-        eglDestroySurface(_eglDisplay, _eglSurface);
+        EGL_CHECK(eglDestroySurface(_eglDisplay, _eglSurface));
         _eglSurface = EGL_NO_SURFACE;
     }
 
-    eglMakeCurrent(_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    EGL_CHECK(eglMakeCurrent(_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT));
 
     #if (CC_PLATFORM == CC_PLATFORM_WINDOWS)
     if (_isPrimaryContex && _nativeDisplay) {
@@ -350,15 +350,17 @@ void GLES3Context::destroy() {
 }
 
 bool GLES3Context::MakeCurrentImpl(bool bound) {
-    return eglMakeCurrent(_eglDisplay,
+    bool succeeded;
+    EGL_CHECK(succeeded = eglMakeCurrent(_eglDisplay,
         bound ? _eglSurface : EGL_NO_SURFACE,
         bound ? _eglSurface : EGL_NO_SURFACE,
         bound ? _eglContext : EGL_NO_CONTEXT
-    );
+    ));
+    return succeeded;
 }
 
 void GLES3Context::present() {
-    eglSwapBuffers(_eglDisplay, _eglSurface);
+    EGL_CHECK(eglSwapBuffers(_eglDisplay, _eglSurface));
 }
 
 #endif

@@ -94,12 +94,12 @@ bool GLES2Context::initialize(const ContextInfo &info) {
             return false;
         }
 
-        _eglDisplay = eglGetDisplay(_nativeDisplay);
+        EGL_CHECK(_eglDisplay = eglGetDisplay(_nativeDisplay));
         if (_eglDisplay == EGL_NO_DISPLAY) {
-            _eglDisplay = eglGetDisplay((EGLNativeDisplayType)EGL_DEFAULT_DISPLAY);
+            EGL_CHECK(_eglDisplay = eglGetDisplay((EGLNativeDisplayType)EGL_DEFAULT_DISPLAY));
         }
     #else
-        _eglDisplay = eglGetDisplay((EGLNativeDisplayType)EGL_DEFAULT_DISPLAY);
+        EGL_CHECK(_eglDisplay = eglGetDisplay((EGLNativeDisplayType)EGL_DEFAULT_DISPLAY));
     #endif
         // If a display still couldn't be obtained, return an error.
         if (_eglDisplay == EGL_NO_DISPLAY) {
@@ -117,7 +117,7 @@ bool GLES2Context::initialize(const ContextInfo &info) {
         //    Make OpenGL ES the current API.
         //    EGL needs a way to know that any subsequent EGL calls are going to be affecting OpenGL ES,
         //    rather than any other API (such as OpenVG).
-        eglBindAPI(EGL_OPENGL_ES_API);
+        EGL_CHECK(eglBindAPI(EGL_OPENGL_ES_API));
 
         if (!gles2wInit()) {
             return false;
@@ -198,7 +198,7 @@ bool GLES2Context::initialize(const ContextInfo &info) {
         ANativeWindow_setBuffersGeometry((ANativeWindow *)_windowHandle, width, height, nFmt);
     #endif
 
-        _eglSurface = eglCreateWindowSurface(_eglDisplay, _eglConfig, (EGLNativeWindowType)_windowHandle, NULL);
+        EGL_CHECK(_eglSurface = eglCreateWindowSurface(_eglDisplay, _eglConfig, (EGLNativeWindowType)_windowHandle, NULL));
         if (_eglSurface == EGL_NO_SURFACE) {
             CC_LOG_ERROR("Window surface created failed.");
             return false;
@@ -207,7 +207,7 @@ bool GLES2Context::initialize(const ContextInfo &info) {
         //String eglVendor = eglQueryString(_eglDisplay, EGL_VENDOR);
         //String eglVersion = eglQueryString(_eglDisplay, EGL_VERSION);
 
-        _extensions = StringUtil::Split((const char *)eglQueryString(_eglDisplay, EGL_EXTENSIONS), " ");
+        EGL_CHECK(_extensions = StringUtil::Split((const char *)eglQueryString(_eglDisplay, EGL_EXTENSIONS), " "));
 
         _majorVersion = 2;
         _minorVersion = 0;
@@ -231,7 +231,7 @@ bool GLES2Context::initialize(const ContextInfo &info) {
             ctxAttribs[n] = EGL_NONE;
         }
 
-        _eglContext = eglCreateContext(_eglDisplay, _eglConfig, NULL, ctxAttribs);
+        EGL_CHECK(_eglContext = eglCreateContext(_eglDisplay, _eglConfig, NULL, ctxAttribs));
         if (!_eglContext) {
             CC_LOG_ERROR("Create EGL context failed.");
             return false;
@@ -259,7 +259,7 @@ bool GLES2Context::initialize(const ContextInfo &info) {
             uint height = _device->getHeight();
             ANativeWindow_setBuffersGeometry((ANativeWindow *)_windowHandle, width, height, nFmt);
 
-            _eglSurface = eglCreateWindowSurface(_eglDisplay, _eglConfig, (EGLNativeWindowType)_windowHandle, NULL);
+            EGL_CHECK(_eglSurface = eglCreateWindowSurface(_eglDisplay, _eglConfig, (EGLNativeWindowType)_windowHandle, NULL));
             if (_eglSurface == EGL_NO_SURFACE) {
                 CC_LOG_ERROR("Recreate window surface failed.");
                 return;
@@ -313,7 +313,7 @@ bool GLES2Context::initialize(const ContextInfo &info) {
 
         ctxAttribs[n] = EGL_NONE;
 
-        _eglContext = eglCreateContext(_eglDisplay, _eglConfig, _eglSharedContext, ctxAttribs);
+        EGL_CHECK(_eglContext = eglCreateContext(_eglDisplay, _eglConfig, _eglSharedContext, ctxAttribs));
         if (!_eglContext) {
             CC_LOG_ERROR("Create EGL context with share context [0x%p] failed.", _eglSharedContext);
             return false;
@@ -326,16 +326,16 @@ bool GLES2Context::initialize(const ContextInfo &info) {
 
 void GLES2Context::destroy() {
     if (_eglContext != EGL_NO_CONTEXT) {
-        eglDestroyContext(_eglDisplay, _eglContext);
+        EGL_CHECK(eglDestroyContext(_eglDisplay, _eglContext));
         _eglContext = EGL_NO_CONTEXT;
     }
 
     if (_eglSurface != EGL_NO_SURFACE) {
-        eglDestroySurface(_eglDisplay, _eglSurface);
+        EGL_CHECK(eglDestroySurface(_eglDisplay, _eglSurface));
         _eglSurface = EGL_NO_SURFACE;
     }
 
-    eglMakeCurrent(_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    EGL_CHECK(eglMakeCurrent(_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT));
 
     #if (CC_PLATFORM == CC_PLATFORM_WINDOWS)
     if (_isPrimaryContex && _nativeDisplay) {
@@ -351,15 +351,17 @@ void GLES2Context::destroy() {
 }
 
 bool GLES2Context::MakeCurrentImpl(bool bound) {
-    return eglMakeCurrent(_eglDisplay,
+    bool succeeded;
+    EGL_CHECK(succeeded = eglMakeCurrent(_eglDisplay,
         bound ? _eglSurface : EGL_NO_SURFACE,
         bound ? _eglSurface : EGL_NO_SURFACE,
         bound ? _eglContext : EGL_NO_CONTEXT
-    );
+    ));
+    return succeeded;
 }
 
 void GLES2Context::present() {
-    eglSwapBuffers(_eglDisplay, _eglSurface);
+    EGL_CHECK(eglSwapBuffers(_eglDisplay, _eglSurface));
 }
 
 #endif
@@ -392,9 +394,9 @@ bool GLES2Context::MakeCurrent(bool bound) {
 #endif
 
 #if CC_DEBUG > 0 && CC_PLATFORM != CC_PLATFORM_MAC_IOS
-            glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_KHR);
-            glDebugMessageControlKHR(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
-            glDebugMessageCallbackKHR(GLES2EGLDebugProc, NULL);
+            GL_CHECK(glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_KHR));
+            GL_CHECK(glDebugMessageControlKHR(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE));
+            GL_CHECK(glDebugMessageCallbackKHR(GLES2EGLDebugProc, NULL));
 #endif
 
             _isInitialized = true;
@@ -402,44 +404,44 @@ bool GLES2Context::MakeCurrent(bool bound) {
 
         //////////////////////////////////////////////////////////////////////////
 
-        glPixelStorei(GL_PACK_ALIGNMENT, 1);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glActiveTexture(GL_TEXTURE0);
+        GL_CHECK(glPixelStorei(GL_PACK_ALIGNMENT, 1));
+        GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
+        GL_CHECK(glActiveTexture(GL_TEXTURE0));
 
         //////////////////////////////////////////////////////////////////////////
 
-        glEnable(GL_SCISSOR_TEST);
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
+        GL_CHECK(glEnable(GL_SCISSOR_TEST));
+        GL_CHECK(glEnable(GL_CULL_FACE));
+        GL_CHECK(glCullFace(GL_BACK));
 
-        glFrontFace(GL_CCW);
+        GL_CHECK(glFrontFace(GL_CCW));
 
-        //glDisable(GL_MULTISAMPLE);
+        //GL_CHECK(glDisable(GL_MULTISAMPLE));
 
         //////////////////////////////////////////////////////////////////////////
         // DepthStencilState
-        glEnable(GL_DEPTH_TEST);
-        glDepthMask(GL_TRUE);
-        glDepthFunc(GL_LESS);
+        GL_CHECK(glEnable(GL_DEPTH_TEST));
+        GL_CHECK(glDepthMask(GL_TRUE));
+        GL_CHECK(glDepthFunc(GL_LESS));
 
-        glStencilFuncSeparate(GL_FRONT, GL_ALWAYS, 1, 0xffffffff);
-        glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_KEEP);
-        glStencilMaskSeparate(GL_FRONT, 0xffffffff);
-        glStencilFuncSeparate(GL_BACK, GL_ALWAYS, 1, 0xffffffff);
-        glStencilOpSeparate(GL_BACK, GL_KEEP, GL_KEEP, GL_KEEP);
-        glStencilMaskSeparate(GL_BACK, 0xffffffff);
+        GL_CHECK(glStencilFuncSeparate(GL_FRONT, GL_ALWAYS, 1, 0xffffffff));
+        GL_CHECK(glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_KEEP));
+        GL_CHECK(glStencilMaskSeparate(GL_FRONT, 0xffffffff));
+        GL_CHECK(glStencilFuncSeparate(GL_BACK, GL_ALWAYS, 1, 0xffffffff));
+        GL_CHECK(glStencilOpSeparate(GL_BACK, GL_KEEP, GL_KEEP, GL_KEEP));
+        GL_CHECK(glStencilMaskSeparate(GL_BACK, 0xffffffff));
 
-        glDisable(GL_STENCIL_TEST);
+        GL_CHECK(glDisable(GL_STENCIL_TEST));
 
         //////////////////////////////////////////////////////////////////////////
         // BlendState
 
-        glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
-        glDisable(GL_BLEND);
-        glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
-        glBlendFuncSeparate(GL_ONE, GL_ZERO, GL_ONE, GL_ZERO);
-        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-        glBlendColor((GLclampf)0.0f, (GLclampf)0.0f, (GLclampf)0.0f, (GLclampf)0.0f);
+        GL_CHECK(glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE));
+        GL_CHECK(glDisable(GL_BLEND));
+        GL_CHECK(glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD));
+        GL_CHECK(glBlendFuncSeparate(GL_ONE, GL_ZERO, GL_ONE, GL_ZERO));
+        GL_CHECK(glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
+        GL_CHECK(glBlendColor((GLclampf)0.0f, (GLclampf)0.0f, (GLclampf)0.0f, (GLclampf)0.0f));
 
         CC_LOG_DEBUG("eglMakeCurrent() - SUCCEEDED, Context: 0x%p", this);
         return true;

@@ -130,6 +130,8 @@ bool CCMTLDevice::initialize(const DeviceInfo &info) {
     _features[static_cast<uint>(Feature::LINE_WIDTH)] = false;
     _features[static_cast<uint>(Feature::STENCIL_COMPARE_MASK)] = false;
     _features[static_cast<uint>(Feature::STENCIL_WRITE_MASK)] = false;
+    _features[static_cast<uint>(Feature::MULTITHREADED_SUBMISSION)] = true;
+
     _features[static_cast<uint>(Feature::FORMAT_RGB8)] = false;
     _features[static_cast<uint>(Feature::FORMAT_D16)] = mu::isDepthStencilFormatSupported(mtlDevice, Format::D16, gpuFamily);
     _features[static_cast<uint>(Feature::FORMAT_D16S8)] = mu::isDepthStencilFormatSupported(mtlDevice, Format::D16S8, gpuFamily);
