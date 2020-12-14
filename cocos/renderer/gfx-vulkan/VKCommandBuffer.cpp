@@ -33,6 +33,7 @@ bool CCVKCommandBuffer::initialize(const CommandBufferInfo &info) {
 
     size_t setCount = ((CCVKDevice *)_device)->bindingMappingInfo().bufferOffsets.size();
     _curGPUDescriptorSets.resize(setCount);
+    _curVkDescriptorSets.resize(setCount);
     _curDynamicOffsets.resize(setCount);
     _curDynamicOffsetCounts.resize(setCount);
 
@@ -41,7 +42,7 @@ bool CCVKCommandBuffer::initialize(const CommandBufferInfo &info) {
 
 void CCVKCommandBuffer::destroy() {
     if (_gpuCommandBuffer) {
-        ((CCVKDevice *)_device)->gpuCommandBufferPool()->yield(_gpuCommandBuffer);
+        ((CCVKDevice *)_device)->gpuDevice()->getCommandBufferPool(std::this_thread::get_id())->yield(_gpuCommandBuffer);
         CC_DELETE(_gpuCommandBuffer);
         _gpuCommandBuffer = nullptr;
     }
@@ -50,7 +51,7 @@ void CCVKCommandBuffer::destroy() {
 void CCVKCommandBuffer::begin(RenderPass *renderPass, uint subpass, Framebuffer *frameBuffer) {
     if (_gpuCommandBuffer->began) return;
 
-    ((CCVKDevice *)_device)->gpuCommandBufferPool()->request(_gpuCommandBuffer);
+    ((CCVKDevice *)_device)->gpuDevice()->getCommandBufferPool(std::this_thread::get_id())->request(_gpuCommandBuffer);
 
     _curGPUPipelineState = nullptr;
     _curGPUInputAssember = nullptr;
@@ -88,6 +89,8 @@ void CCVKCommandBuffer::end() {
     _curGPUFBO = nullptr;
     VK_CHECK(vkEndCommandBuffer(_gpuCommandBuffer->vkCommandBuffer));
     _gpuCommandBuffer->began = false;
+    
+    ((CCVKDevice *)_device)->gpuDevice()->getCommandBufferPool(std::this_thread::get_id())->yield(_gpuCommandBuffer);
 }
 
 void CCVKCommandBuffer::beginRenderPass(RenderPass *renderPass, Framebuffer *fbo, const Rect &renderArea,
@@ -168,10 +171,7 @@ void CCVKCommandBuffer::bindDescriptorSet(uint set, DescriptorSet *descriptorSet
 
     if (_curGPUDescriptorSets[set] != gpuDescriptorSet) {
         _curGPUDescriptorSets[set] = gpuDescriptorSet;
-        if (set < _firstDirtyDescriptorSet) {
-            _firstDirtyDescriptorSet = set;
-            _firstDifferentDescriptorSet = set;
-        }
+        if (set < _firstDirtyDescriptorSet) _firstDirtyDescriptorSet = set;
     }
     if (dynamicOffsetCount) {
         _curDynamicOffsets[set] = dynamicOffsets;
@@ -390,61 +390,32 @@ void CCVKCommandBuffer::copyBuffersToTexture(const uint8_t *const *buffers, Text
 }
 
 void CCVKCommandBuffer::bindDescriptorSets() {
-
     CCVKDevice *device = (CCVKDevice *)_device;
     CCVKGPUDevice *gpuDevice = device->gpuDevice();
     CCVKGPUPipelineLayout *pipelineLayout = _curGPUPipelineState->gpuPipelineLayout;
-    vector<VkDescriptorSet> &sets = _curGPUPipelineState->gpuPipelineLayout->descriptorSets;
-
-    if (_firstDifferentDescriptorSet < _curGPUDescriptorSets.size()) {
-        uint differentDescriptorSetCount = _curGPUDescriptorSets.size() - _firstDifferentDescriptorSet;
-        const vector<VkDescriptorSetLayout> &layouts = _curGPUPipelineState->gpuPipelineLayout->descriptorSetLayouts;
-        device->gpuDescriptorSetPool()->alloc(layouts.data() + _firstDifferentDescriptorSet,
-                                              sets.data() + _firstDifferentDescriptorSet,
-                                              differentDescriptorSetCount);
-
-        for (uint i = 0u; i < differentDescriptorSetCount; i++) {
-            uint set = _firstDifferentDescriptorSet + i;
-            CCVKGPUDescriptorSet *gpuDescriptorSet = _curGPUDescriptorSets[set];
-            if (!gpuDescriptorSet || !gpuDescriptorSet->gpuDescriptors.size()) continue;
-
-            if (gpuDevice->useDescriptorUpdateTemplate) {
-                const vector<CCVKDescriptorInfo> &descriptorInfos = gpuDescriptorSet->descriptorInfos;
-                const vector<VkDescriptorUpdateTemplate> &templates = pipelineLayout->vkDescriptorUpdateTemplates;
-                vkUpdateDescriptorSetWithTemplateKHR(gpuDevice->vkDevice, sets[set], templates[set], descriptorInfos.data());
-            } else {
-                vector<VkWriteDescriptorSet> &entries = gpuDescriptorSet->descriptorUpdateEntries;
-
-                for (uint j = 0u; j < entries.size(); j++) {
-                    entries[j].dstSet = sets[set];
-                }
-                vkUpdateDescriptorSets(gpuDevice->vkDevice, entries.size(), entries.data(), 0, nullptr);
-            }
-        }
-    }
 
     uint dirtyDescriptorSetCount = _curGPUDescriptorSets.size() - _firstDirtyDescriptorSet;
     uint dynamicOffsetStartIndex = pipelineLayout->dynamicOffsetOffsets[_firstDirtyDescriptorSet];
     uint dynamicOffsetCount = pipelineLayout->dynamicOffsetCount - dynamicOffsetStartIndex;
     uint *dynamicOffsets = pipelineLayout->dynamicOffsets.data() + dynamicOffsetStartIndex;
-    if (_firstDirtyDescriptorSet < _curGPUDescriptorSets.size()) {
-        for (uint i = 0u, offsetAcc = 0u; i < dirtyDescriptorSetCount; i++) {
-            uint set = _firstDirtyDescriptorSet + i;
-            uint offsetCount = pipelineLayout->dynamicOffsetOffsets[set + 1] - dynamicOffsetStartIndex;
-            CCASSERT(_curDynamicOffsetCounts[set] == offsetCount, "dynamic offset count mismatch");
-            if (offsetCount > 0) {
-                memcpy(dynamicOffsets + offsetAcc, _curDynamicOffsets[set], offsetCount * sizeof(uint));
-                offsetAcc += offsetCount;
-            }
+    for (uint i = 0u, offsetAcc = 0u; i < dirtyDescriptorSetCount; i++) {
+        uint set = _firstDirtyDescriptorSet + i;
+        _curVkDescriptorSets[set] = _curGPUDescriptorSets[set]->vkDescriptorSets[gpuDevice->curBackBufferIndex];
+        uint offsetCount = pipelineLayout->dynamicOffsetOffsets[set + 1] - dynamicOffsetStartIndex;
+        CCASSERT(_curDynamicOffsetCounts[set] == offsetCount, "dynamic offset count mismatch");
+        if (offsetCount > 0) {
+            memcpy(dynamicOffsets + offsetAcc, _curDynamicOffsets[set], offsetCount * sizeof(uint));
+            offsetAcc += offsetCount;
         }
     }
 
-    vkCmdBindDescriptorSets(_gpuCommandBuffer->vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout->vkPipelineLayout,
-                            _firstDirtyDescriptorSet, dirtyDescriptorSetCount, sets.data() + _firstDirtyDescriptorSet,
+    vkCmdBindDescriptorSets(_gpuCommandBuffer->vkCommandBuffer,
+                            VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout->vkPipelineLayout,
+                            _firstDirtyDescriptorSet, dirtyDescriptorSetCount,
+                            &_curVkDescriptorSets[_firstDirtyDescriptorSet],
                             dynamicOffsetCount, dynamicOffsets);
 
     _firstDirtyDescriptorSet = UINT_MAX;
-    _firstDifferentDescriptorSet = UINT_MAX;
 }
 
 } // namespace gfx

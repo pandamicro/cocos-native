@@ -14,7 +14,7 @@
 
 namespace cc {
 namespace gfx {
-            
+
 namespace {
 
 constexpr uint FORCE_MINOR_VERSION = 0;             // 0 for default version, otherwise minorVersion = (FORCE_MINOR_VERSION - 1)
@@ -28,11 +28,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugUtilsMessengerCallback(VkDebugUtilsMessageSe
                                                            VkDebugUtilsMessageTypeFlagsEXT messageType,
                                                            const VkDebugUtilsMessengerCallbackDataEXT *callbackData,
                                                            void *userData) {
-    // The current allocation strategy will have invalid requests, and we handle them explicitly
-    if (strstr(callbackData->pMessageIdName, "VUID-VkDescriptorSetAllocateInfo-descriptorPool-00307")) {
-        return VK_FALSE;
-    }
-
     // GPU-assisted validation might throw this due to driver reasons which is safe to ignore
     if (strstr(callbackData->pMessage, "Failure to instrument shader")) {
         return VK_FALSE;
@@ -56,17 +51,13 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallback(VkDebugReportFlagsEXT flags,
                                                    const char *layerPrefix,
                                                    const char *message,
                                                    void *userData) {
-    // The current allocation strategy will have invalid requests, and we handle them explicitly
-    if (strstr(message, "VUID-VkDescriptorSetAllocateInfo-descriptorPool-00307")) {
-        return VK_FALSE;
-    }
-
     // GPU-assisted validation might throw this due to driver reasons which is safe to ignore
     if (strstr(message, "Failure to instrument shader")) {
         return VK_FALSE;
     }
 
-    // These are thrown when missing proper drivers, at which time we should try to shut down gracefully
+    // These are thrown randomly when missing proper vulkan drivers
+    // at which time we should try to shut down the backend gracefully instead of freezing at assertions
     if (strstr(message, "setupLoaderTermPhysDevs") || strstr(message, "setupLoaderTrampPhysDevs")) {
         return VK_FALSE;
     }
@@ -484,7 +475,7 @@ bool CCVKContext::initialize(const ContextInfo &info) {
         }
 
         // Determine the number of images
-        uint desiredNumberOfSwapchainImages = std::max(device->_backBufferCount, surfaceCapabilities.minImageCount + 1);
+        uint desiredNumberOfSwapchainImages = std::max(3u, surfaceCapabilities.minImageCount + 1);
 
         if ((surfaceCapabilities.maxImageCount > 0) && (desiredNumberOfSwapchainImages > surfaceCapabilities.maxImageCount)) {
             desiredNumberOfSwapchainImages = surfaceCapabilities.maxImageCount;

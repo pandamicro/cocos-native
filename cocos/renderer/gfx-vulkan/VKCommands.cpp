@@ -14,6 +14,20 @@
 namespace cc {
 namespace gfx {
 
+CCVKGPUDevice::~CCVKGPUDevice() {
+    for (CommandBufferPools::iterator it = commandBufferPools.begin(); it != commandBufferPools.end(); ++it) {
+        CC_SAFE_DELETE(it->second);
+    }
+    commandBufferPools.clear();
+}
+
+CCVKGPUCommandBufferPool* CCVKGPUDevice::getCommandBufferPool(std::thread::id threadID) {
+    if (!commandBufferPools.count(threadID)) {
+        commandBufferPools[threadID] = CC_NEW(CCVKGPUCommandBufferPool(this));
+    }
+    return commandBufferPools[threadID];
+}
+
 void insertVkDynamicStates(vector<VkDynamicState> &out, const vector<DynamicStateFlagBit> &dynamicStates) {
     for (DynamicStateFlagBit dynamicState : dynamicStates) {
         switch (dynamicState) {
@@ -348,21 +362,22 @@ void CCVKCmdFuncCreateDescriptorSetLayout(CCVKDevice *device, CCVKGPUDescriptorS
     setCreateInfo.bindingCount = bindingCount;
     setCreateInfo.pBindings = gpuDescriptorSetLayout->vkBindings.data();
     VK_CHECK(vkCreateDescriptorSetLayout(gpuDevice->vkDevice, &setCreateInfo, nullptr, &gpuDescriptorSetLayout->vkDescriptorSetLayout));
+
+    gpuDescriptorSetLayout->pool.link(gpuDevice, gpuDescriptorSetLayout->maxSetsPerPool, gpuDescriptorSetLayout->vkBindings, gpuDescriptorSetLayout->vkDescriptorSetLayout);
 }
 
 void CCVKCmdFuncCreatePipelineLayout(CCVKDevice *device, CCVKGPUPipelineLayout *gpuPipelineLayout) {
     CCVKGPUDevice *gpuDevice = device->gpuDevice();
     size_t layoutCount = gpuPipelineLayout->setLayouts.size();
 
-    gpuPipelineLayout->descriptorSets.resize(layoutCount);
-    gpuPipelineLayout->descriptorSetLayouts.resize(layoutCount);
+    vector<VkDescriptorSetLayout> descriptorSetLayouts(layoutCount);
     for (uint i = 0; i < layoutCount; i++) {
-        gpuPipelineLayout->descriptorSetLayouts[i] = gpuPipelineLayout->setLayouts[i]->vkDescriptorSetLayout;
+        descriptorSetLayouts[i] = gpuPipelineLayout->setLayouts[i]->vkDescriptorSetLayout;
     }
 
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
     pipelineLayoutCreateInfo.setLayoutCount = layoutCount;
-    pipelineLayoutCreateInfo.pSetLayouts = gpuPipelineLayout->descriptorSetLayouts.data();
+    pipelineLayoutCreateInfo.pSetLayouts = descriptorSetLayouts.data();
     VK_CHECK(vkCreatePipelineLayout(gpuDevice->vkDevice, &pipelineLayoutCreateInfo, nullptr, &gpuPipelineLayout->vkPipelineLayout));
 
     if (gpuDevice->useDescriptorUpdateTemplate) {
@@ -637,10 +652,10 @@ void CCVKCmdFuncUpdateBuffer(CCVKDevice *device, CCVKGPUBuffer *gpuBuffer, const
         sizeToUpload = size;
     }
 
-//    if (!cmdBuffer && gpuBuffer->mappedData) {
-//        device->gpuTransportHub()->checkIn(gpuBuffer->mappedData + offset, dataToUpload, sizeToUpload);
-//        return;
-//    }
+    //    if (!cmdBuffer && gpuBuffer->mappedData) {
+    //        device->gpuTransportHub()->checkIn(gpuBuffer->mappedData + offset, dataToUpload, sizeToUpload);
+    //        return;
+    //    }
 
     CCVKGPUBuffer stagingBuffer;
     stagingBuffer.size = sizeToUpload;
@@ -662,7 +677,7 @@ void CCVKCmdFuncUpdateBuffer(CCVKDevice *device, CCVKGPUBuffer *gpuBuffer, const
         barrier.size = region.size;
         vkCmdPipelineBarrier(cmdBuffer->vkCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, gpuBuffer->targetStage, 0, 0, nullptr, 1, &barrier, 0, nullptr);
     };
-    
+
     if (cmdBuffer) {
         upload(cmdBuffer);
     } else {

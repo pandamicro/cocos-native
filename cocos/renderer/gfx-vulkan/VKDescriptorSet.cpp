@@ -4,6 +4,7 @@
 #include "VKCommands.h"
 #include "VKDescriptorSet.h"
 #include "VKDescriptorSetLayout.h"
+#include "VKPipelineLayout.h"
 #include "VKDevice.h"
 #include "VKSampler.h"
 #include "VKShader.h"
@@ -21,9 +22,10 @@ CCVKDescriptorSet::~CCVKDescriptorSet() {
 
 bool CCVKDescriptorSet::initialize(const DescriptorSetInfo &info) {
 
-    _layout = info.layout;
+    _layout = info.layout->getSetLayouts()[info.setIndex];
 
-    const CCVKGPUDescriptorSetLayout *gpuDescriptorSetLayout = ((CCVKDescriptorSetLayout *)_layout)->gpuDescriptorSetLayout();
+    CCVKGPUPipelineLayout *gpuPipelineLayout = ((CCVKPipelineLayout *)info.layout)->gpuPipelineLayout();
+    CCVKGPUDescriptorSetLayout *gpuDescriptorSetLayout = ((CCVKDescriptorSetLayout *)_layout)->gpuDescriptorSetLayout();
     const uint bindingCount = gpuDescriptorSetLayout->bindings.size();
     const uint descriptorCount = gpuDescriptorSetLayout->descriptorCount;
 
@@ -35,6 +37,7 @@ bool CCVKDescriptorSet::initialize(const DescriptorSetInfo &info) {
     _gpuDescriptorSet = CC_NEW(CCVKGPUDescriptorSet);
     _gpuDescriptorSet->gpuDescriptors.resize(descriptorCount, {});
     _gpuDescriptorSet->descriptorInfos.resize(descriptorCount, {});
+
     for (size_t i = 0u, k = 0u; i < bindingCount; i++) {
         const DescriptorSetLayoutBinding &binding = gpuDescriptorSetLayout->bindings[i];
         for (uint j = 0; j < binding.count; j++, k++) {
@@ -51,7 +54,9 @@ bool CCVKDescriptorSet::initialize(const DescriptorSetInfo &info) {
         }
     }
 
-    if (!gpuDevice->useDescriptorUpdateTemplate) {
+    if (gpuDevice->useDescriptorUpdateTemplate) {
+        _gpuDescriptorSet->pUpdateTemplate = &gpuPipelineLayout->vkDescriptorUpdateTemplates[info.setIndex];
+    } else {
         vector<VkWriteDescriptorSet> &entries = _gpuDescriptorSet->descriptorUpdateEntries;
         entries.resize(descriptorCount, {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET});
 
@@ -86,6 +91,11 @@ bool CCVKDescriptorSet::initialize(const DescriptorSetInfo &info) {
         }
     }
 
+    _gpuDescriptorSet->vkDescriptorSets.resize(gpuDevice->backBufferCount);
+    for (uint i = 0u; i < gpuDevice->backBufferCount; ++i) {
+        _gpuDescriptorSet->vkDescriptorSets[i] = gpuDescriptorSetLayout->pool.request();
+    }
+
     return true;
 }
 
@@ -106,9 +116,18 @@ void CCVKDescriptorSet::destroy() {
                 descriptorHub->disengage(binding.gpuSampler, &descriptorInfo.image);
             }
         }
+
+        CCVKGPUDescriptorSetLayout *gpuDescriptorSetLayout = ((CCVKDescriptorSetLayout *)_layout)->gpuDescriptorSetLayout();
+        if (gpuDescriptorSetLayout) {
+            for (uint i = 0u; i < _gpuDescriptorSet->vkDescriptorSets.size(); ++i) {
+                gpuDescriptorSetLayout->pool.yield(_gpuDescriptorSet->vkDescriptorSets[i]);
+            }
+        }
+
         CC_DELETE(_gpuDescriptorSet);
         _gpuDescriptorSet = nullptr;
     }
+
     // do remember to clear these or else it might not be properly updated when reused
     _buffers.clear();
     _textures.clear();
@@ -167,6 +186,7 @@ void CCVKDescriptorSet::update() {
                 }
             }
         }
+        ((CCVKDevice *)_device)->gpuDescriptorSetHub()->record(_gpuDescriptorSet);
         _isDirty = false;
     }
 }
