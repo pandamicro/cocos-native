@@ -4,20 +4,19 @@
 namespace cc {
 namespace gfx {
 
-class CCVKBuffer;
 class CCVKTexture;
-class CCVKRenderPass;
 
 class CCVKGPUDevice;
 class CCVKGPUContext;
 class CCVKGPUSwapchain;
 
-class CCVKGPUFencePool;
-class CCVKGPURecycleBin;
-class CCVKGPUTransportHub;
 class CCVKGPUDescriptorHub;
 class CCVKGPUSemaphorePool;
 class CCVKGPUDescriptorSetHub;
+
+class CCVKGPUFencePool;
+class CCVKGPURecycleBin;
+class CCVKGPUTransportHub;
 class CCVKGPUStagingBufferPool;
 
 class CC_VULKAN_API CCVKDevice final : public Device {

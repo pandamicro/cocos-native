@@ -65,17 +65,22 @@ void CCVKCommandBuffer::begin(RenderPass *renderPass, uint subpass, Framebuffer 
 
     VkCommandBufferBeginInfo beginInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    VkCommandBufferInheritanceInfo inheritanceInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO};
 
     if (_type == CommandBufferType::SECONDARY) {
         if (!renderPass) {
             CC_LOG_ERROR("RenderPass has to be specified when beginning secondary command buffers.");
             return;
         }
-        VkCommandBufferInheritanceInfo inheritanceInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO};
         inheritanceInfo.renderPass = ((CCVKRenderPass *)renderPass)->gpuRenderPass()->vkRenderPass;
         inheritanceInfo.subpass = subpass;
-        if (frameBuffer) inheritanceInfo.framebuffer = ((CCVKFramebuffer *)frameBuffer)->gpuFBO()->vkFramebuffer;
+        if (frameBuffer) {
+            CCVKGPUFramebuffer *gpuFBO = ((CCVKFramebuffer *)frameBuffer)->gpuFBO();
+            if (gpuFBO->isOffscreen) inheritanceInfo.framebuffer = gpuFBO->vkFramebuffer;
+            else inheritanceInfo.framebuffer = gpuFBO->swapchain->vkSwapchainFramebufferListMap[gpuFBO][gpuFBO->swapchain->curImageIndex];
+        }
         beginInfo.pInheritanceInfo = &inheritanceInfo;
+        beginInfo.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
     }
 
     VK_CHECK(vkBeginCommandBuffer(_gpuCommandBuffer->vkCommandBuffer, &beginInfo));
@@ -87,14 +92,15 @@ void CCVKCommandBuffer::end() {
     if (!_gpuCommandBuffer->began) return;
 
     _curGPUFBO = nullptr;
+    _curGPUInputAssember = nullptr;
+    _curViewport.width = _curViewport.height = _curScissor.width = _curScissor.height = 0u;
     VK_CHECK(vkEndCommandBuffer(_gpuCommandBuffer->vkCommandBuffer));
     _gpuCommandBuffer->began = false;
     
     ((CCVKDevice *)_device)->gpuDevice()->getCommandBufferPool(std::this_thread::get_id())->yield(_gpuCommandBuffer);
 }
 
-void CCVKCommandBuffer::beginRenderPass(RenderPass *renderPass, Framebuffer *fbo, const Rect &renderArea,
-                                        const Color *colors, float depth, int stencil) {
+void CCVKCommandBuffer::beginRenderPass(RenderPass *renderPass, Framebuffer *fbo, const Rect &renderArea, const Color *colors, float depth, int stencil, bool fromSecondaryCB) {
     _curGPUFBO = ((CCVKFramebuffer *)fbo)->gpuFBO();
     CCVKGPURenderPass *gpuRenderPass = ((CCVKRenderPass *)renderPass)->gpuRenderPass();
     VkFramebuffer framebuffer = _curGPUFBO->vkFramebuffer;
@@ -139,11 +145,13 @@ void CCVKCommandBuffer::beginRenderPass(RenderPass *renderPass, Framebuffer *fbo
     passBeginInfo.clearValueCount = clearValues.size();
     passBeginInfo.pClearValues = clearValues.data();
     passBeginInfo.renderArea = {{(int)renderArea.x, (int)renderArea.y}, {renderArea.width, renderArea.height}};
-    vkCmdBeginRenderPass(_gpuCommandBuffer->vkCommandBuffer, &passBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(_gpuCommandBuffer->vkCommandBuffer, &passBeginInfo, fromSecondaryCB ? VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS : VK_SUBPASS_CONTENTS_INLINE);
 
-    VkViewport viewport{(float)renderArea.x, (float)renderArea.y, (float)renderArea.width, (float)renderArea.height, 0.f, 1.f};
-    vkCmdSetViewport(_gpuCommandBuffer->vkCommandBuffer, 0, 1, &viewport);
-    vkCmdSetScissor(_gpuCommandBuffer->vkCommandBuffer, 0, 1, &passBeginInfo.renderArea);
+    if (!fromSecondaryCB) {
+        VkViewport viewport{(float)renderArea.x, (float)renderArea.y, (float)renderArea.width, (float)renderArea.height, 0.f, 1.f};
+        vkCmdSetViewport(_gpuCommandBuffer->vkCommandBuffer, 0, 1, &viewport);
+        vkCmdSetScissor(_gpuCommandBuffer->vkCommandBuffer, 0, 1, &passBeginInfo.renderArea);
+    }
 }
 
 void CCVKCommandBuffer::endRenderPass() {
@@ -366,19 +374,18 @@ void CCVKCommandBuffer::draw(InputAssembler *ia) {
 
 void CCVKCommandBuffer::execute(const CommandBuffer *const *cmdBuffs, uint count) {
     if (!count) return;
-
-    vector<VkCommandBuffer> vkCmdBuffs(count);
+    _vkCommandBuffers.resize(count);
 
     for (uint i = 0u; i < count; ++i) {
         CCVKCommandBuffer *cmdBuff = (CCVKCommandBuffer *)cmdBuffs[i];
-        vkCmdBuffs[i] = cmdBuff->_gpuCommandBuffer->vkCommandBuffer;
+        _vkCommandBuffers[i] = cmdBuff->_gpuCommandBuffer->vkCommandBuffer;
 
         _numDrawCalls += cmdBuff->getNumDrawCalls();
         _numInstances += cmdBuff->getNumInstances();
         _numTriangles += cmdBuff->getNumTris();
     }
 
-    vkCmdExecuteCommands(_gpuCommandBuffer->vkCommandBuffer, count, vkCmdBuffs.data());
+    vkCmdExecuteCommands(_gpuCommandBuffer->vkCommandBuffer, count, _vkCommandBuffers.data());
 }
 
 void CCVKCommandBuffer::updateBuffer(Buffer *buffer, const void *data, uint size, uint offset) {
