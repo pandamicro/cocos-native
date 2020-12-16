@@ -14,13 +14,6 @@
 namespace cc {
 namespace gfx {
 
-CCVKGPUDevice::~CCVKGPUDevice() {
-    for (CommandBufferPools::iterator it = commandBufferPools.begin(); it != commandBufferPools.end(); ++it) {
-        CC_SAFE_DELETE(it->second);
-    }
-    commandBufferPools.clear();
-}
-
 CCVKGPUCommandBufferPool* CCVKGPUDevice::getCommandBufferPool(std::thread::id threadID) {
     if (!commandBufferPools.count(threadID)) {
         commandBufferPools[threadID] = CC_NEW(CCVKGPUCommandBufferPool(this));

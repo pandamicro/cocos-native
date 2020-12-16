@@ -449,6 +449,12 @@ void CCVKDevice::destroy() {
             _gpuDevice->memoryAllocator = VK_NULL_HANDLE;
         }
 
+        for (CCVKGPUDevice::CommandBufferPools::iterator it = _gpuDevice->commandBufferPools.begin();
+             it != _gpuDevice->commandBufferPools.end(); ++it) {
+            CC_SAFE_DELETE(it->second);
+        }
+        _gpuDevice->commandBufferPools.clear();
+
         if (_gpuDevice->vkDevice != VK_NULL_HANDLE) {
             vkDestroyDevice(_gpuDevice->vkDevice, nullptr);
             _gpuDevice->vkDevice = VK_NULL_HANDLE;

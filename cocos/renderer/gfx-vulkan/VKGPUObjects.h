@@ -289,7 +289,6 @@ public:
         CCVKGPUCommandBufferPool*, std::hash<std::thread::id>>;
     CommandBufferPools commandBufferPools;
 
-    ~CCVKGPUDevice();
     CCVKGPUCommandBufferPool* getCommandBufferPool(std::thread::id threadID);
 };
 
