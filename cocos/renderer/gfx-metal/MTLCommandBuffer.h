@@ -2,6 +2,7 @@
 
 #include "MTLCommands.h"
 #include "MTLGPUObjects.h"
+#include "MTLRenderCommandEncoder.h"
 #import <Metal/MTLCommandQueue.h>
 #import <MetalKit/MTKView.h>
 
@@ -11,7 +12,6 @@ namespace gfx {
 struct CCMTLDepthBias;
 struct CCMTLDepthBounds;
 struct CCMTLGPUPipelineState;
-struct CCMTLGPUBuffer;
 class CCMTLInputAssembler;
 class CCMTLDevice;
 class CCMTLRenderPass;
@@ -22,7 +22,7 @@ class CCMTLCommandBuffer : public CommandBuffer {
 
 public:
     CCMTLCommandBuffer(Device *device);
-    ~CCMTLCommandBuffer();
+    ~CCMTLCommandBuffer() = default;
 
     virtual bool initialize(const CommandBufferInfo &info) override;
     virtual void destroy() override;
@@ -47,6 +47,7 @@ public:
     virtual void execute(const CommandBuffer *const *cmdBuffs, uint32_t count) override;
     
     CC_INLINE bool isCommandBufferBegan() const { return _commandBufferBegan; }
+    CC_INLINE id<MTLCommandBuffer> getMTLCommandBuffer() const { return _mtlCommandBuffer; } 
 
 private:
     void bindDescriptorSets();
@@ -54,16 +55,9 @@ private:
     id<CAMetalDrawable> getCurrentDrawable();
 
     CCMTLGPUPipelineState *_gpuPipelineState = nullptr;
-    Viewport _currentViewport;
-    Rect _currentScissor;
-    CCMTLFence *_fence = nullptr;
-
-    CCMTLDepthBias _depthBias;
-    CCMTLDepthBounds _depthBounds;
-    Color _blendConstants;
 
     vector<CCMTLGPUDescriptorSet *> _GPUDescriptorSets;
-    vector<vector<uint>> _dynamicOffsets;
+    vector<uint *> _dynamicOffsets;
     uint _firstDirtyDescriptorSet = UINT_MAX;
 
     bool _indirectDrawSuppotred = false;
@@ -73,9 +67,7 @@ private:
     id<CAMetalDrawable> _currDrawable = nil;
     id<MTLCommandQueue> _mtlCommandQueue = nil;
     id<MTLCommandBuffer> _mtlCommandBuffer = nil;
-    id<MTLRenderCommandEncoder> _mtlEncoder = nil;
-    CCMTLGPUBuffer _gpuIndexBuffer;
-    CCMTLGPUBuffer _gpuIndirectBuffer;
+    CCMTLRenderCommandEncoder _commandEncoder;
     CCMTLInputAssembler *_inputAssembler = nullptr;
     MTLIndexType _indexType = MTLIndexTypeUInt16;
     MTLPrimitiveType _mtlPrimitiveType = MTLPrimitiveType::MTLPrimitiveTypeTriangle;

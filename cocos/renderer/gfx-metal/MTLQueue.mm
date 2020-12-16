@@ -7,11 +7,6 @@ namespace gfx {
 
 CCMTLQueue::CCMTLQueue(Device *device)
 : Queue(device) {
-    _fence = device->createFence({});
-}
-
-CCMTLQueue::~CCMTLQueue() {
-    destroy();
 }
 
 bool CCMTLQueue::initialize(const QueueInfo &info) {
@@ -21,7 +16,6 @@ bool CCMTLQueue::initialize(const QueueInfo &info) {
 }
 
 void CCMTLQueue::destroy() {
-    CC_DELETE(_fence);
 }
 
 void CCMTLQueue::submit(const CommandBuffer *const *cmdBuffs, uint count, Fence *fence) {

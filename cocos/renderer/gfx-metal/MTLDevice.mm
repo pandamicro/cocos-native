@@ -2,6 +2,7 @@
 
 #include "MTLBuffer.h"
 #include "MTLCommandBuffer.h"
+#include "MTLConfig.h"
 #include "MTLContext.h"
 #include "MTLDescriptorSet.h"
 #include "MTLDescriptorSetLayout.h"
@@ -14,13 +15,16 @@
 #include "MTLQueue.h"
 #include "MTLRenderPass.h"
 #include "MTLSampler.h"
+#include "MTLSemaphore.h"
 #include "MTLShader.h"
-#include "MTLStateCache.h"
 #include "MTLTexture.h"
 #include "MTLUtils.h"
 #include "TargetConditionals.h"
+#include "cocos/bindings/event/CustomEventTypes.h"
+#include "cocos/bindings/event/EventDispatcher.h"
 
 #import <MetalKit/MTKView.h>
+#include <dispatch/dispatch.h>
 
 namespace cc {
 namespace gfx {
@@ -30,8 +34,6 @@ CCMTLDevice::CCMTLDevice() {
     _screenSpaceSignY = 1.0f;
     _UVSpaceSignY = 1.0f;
 }
-
-CCMTLDevice::~CCMTLDevice() {}
 
 bool CCMTLDevice::initialize(const DeviceInfo &info) {
     _API = API::METAL;
@@ -50,7 +52,8 @@ bool CCMTLDevice::initialize(const DeviceInfo &info) {
         _bindingMappingInfo.samplerOffsets.push_back(0);
     }
 
-    _stateCache = CC_NEW(CCMTLStateCache);
+    _inFlightSemaphore = CC_NEW(CCMTLSemaphore(MAX_FRAMES_IN_FLIGHT));
+    _currentFrameIndex = 0;
 
     _mtkView = (MTKView *)_windowHandle;
     id<MTLDevice> mtlDevice = ((MTKView *)_mtkView).device;
@@ -94,7 +97,9 @@ bool CCMTLDevice::initialize(const DeviceInfo &info) {
     cmdBuffInfo.queue = _queue;
     _cmdBuff = createCommandBuffer(cmdBuffInfo);
 
-    _gpuStagingBufferPool = CC_NEW(CCMTLGPUStagingBufferPool(mtlDevice));
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+        _gpuStagingBufferPools[i] = CC_NEW(CCMTLGPUStagingBufferPool(mtlDevice));
+    }
 
     _features[static_cast<int>(Feature::COLOR_FLOAT)] = mu::isColorBufferFloatSupported(gpuFamily);
     _features[static_cast<int>(Feature::COLOR_HALF_FLOAT)] = mu::isColorBufferHalfFloatSupported(gpuFamily);
@@ -139,32 +144,39 @@ bool CCMTLDevice::initialize(const DeviceInfo &info) {
     _features[static_cast<uint>(Feature::FORMAT_D32F)] = mu::isDepthStencilFormatSupported(mtlDevice, Format::D32F, gpuFamily);
     _features[static_cast<uint>(Feature::FORMAT_D32FS8)] = mu::isDepthStencilFormatSupported(mtlDevice, Format::D32F_S8, gpuFamily);
 
+    _memoryAlarmListenerId = EventDispatcher::addCustomEventListener(EVENT_MEMORY_WARNING, std::bind(&CCMTLDevice::onMemoryWarning, this));
+
     CC_LOG_INFO("Metal Feature Set: %s", mu::featureSetToString(MTLFeatureSet(_mtlFeatureSet)).c_str());
 
     return true;
 }
 
 void CCMTLDevice::destroy() {
+    if (_memoryAlarmListenerId != 0) {
+        EventDispatcher::removeCustomEventListener(EVENT_MEMORY_WARNING, _memoryAlarmListenerId);
+        _memoryAlarmListenerId = 0;
+    }
     CC_SAFE_DESTROY(_queue);
     CC_SAFE_DESTROY(_cmdBuff);
     CC_SAFE_DESTROY(_context);
-    CC_SAFE_DELETE(_stateCache);
-    CC_SAFE_DELETE(_gpuStagingBufferPool);
+    CC_SAFE_DELETE(_inFlightSemaphore);
+
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+        CC_SAFE_DELETE(_gpuStagingBufferPools[i]);
+        _gpuStagingBufferPools[i] = nullptr;
+    }
 }
 
 void CCMTLDevice::resize(uint width, uint height) {}
 
 void CCMTLDevice::acquire() {
-    CCMTLQueue *queue = (CCMTLQueue *)_queue;
+    _inFlightSemaphore->wait();
 
-    queue->getFence()->wait();
     // Clear queue stats
+    CCMTLQueue *queue = static_cast<CCMTLQueue *>(_queue);
     queue->_numDrawCalls = 0;
     queue->_numInstances = 0;
     queue->_numTriangles = 0;
-    if (!static_cast<CCMTLCommandBuffer *>(_cmdBuff)->isCommandBufferBegan()) {
-        _gpuStagingBufferPool->reset();
-    }
 }
 
 void CCMTLDevice::present() {
@@ -172,6 +184,20 @@ void CCMTLDevice::present() {
     _numDrawCalls = queue->_numDrawCalls;
     _numInstances = queue->_numInstances;
     _numTriangles = queue->_numTriangles;
+
+    //hold this pointer before update _currentFrameIndex
+    CCMTLGPUStagingBufferPool *bufferPool = _gpuStagingBufferPools[_currentFrameIndex];
+    _currentFrameIndex = (_currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+
+    auto mtlCommandBuffer = static_cast<CCMTLCommandBuffer *>(_cmdBuff)->getMTLCommandBuffer();
+    auto mtkView = static_cast<MTKView *>(_mtkView);
+    [mtlCommandBuffer presentDrawable:mtkView.currentDrawable];
+    [mtlCommandBuffer addCompletedHandler:^(id<MTLCommandBuffer> commandBuffer) {
+        [commandBuffer release];
+        bufferPool->reset();
+        _inFlightSemaphore->signal();
+    }];
+    [mtlCommandBuffer commit];
 }
 
 Fence *CCMTLDevice::createFence() {
@@ -240,24 +266,10 @@ void CCMTLDevice::copyBuffersToTexture(const uint8_t *const *buffers, Texture *t
     static_cast<CCMTLCommandBuffer *>(_cmdBuff)->copyBuffersToTexture(buffers, texture, regions, count);
 }
 
-void CCMTLDevice::blitBuffer(void *srcData, uint offset, uint size, void *dstBuffer) {
-    CCMTLGPUBuffer stagingBuffer;
-    stagingBuffer.size = size;
-    _gpuStagingBufferPool->alloc(&stagingBuffer);
-    memcpy(stagingBuffer.mappedData, srcData, size);
-
-    // Create a command buffer for GPU work.
-    id<MTLCommandBuffer> commandBuffer = [id<MTLCommandQueue>(_mtlCommandQueue) commandBuffer];
-
-    // Encode a blit pass to copy data from the source buffer to the private buffer.
-    id<MTLBlitCommandEncoder> blitCommandEncoder = [commandBuffer blitCommandEncoder];
-    [blitCommandEncoder copyFromBuffer:stagingBuffer.mtlBuffer
-                          sourceOffset:stagingBuffer.startOffset
-                              toBuffer:id<MTLBuffer>(dstBuffer)
-                     destinationOffset:offset
-                                  size:size];
-    [blitCommandEncoder endEncoding];
-    [commandBuffer commit];
+void CCMTLDevice::onMemoryWarning() {
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+        _gpuStagingBufferPools[i]->shrinkSize();
+    }
 }
 
 } // namespace gfx

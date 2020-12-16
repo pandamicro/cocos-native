@@ -96,7 +96,7 @@ void CCVKCommandBuffer::end() {
     _curViewport.width = _curViewport.height = _curScissor.width = _curScissor.height = 0u;
     VK_CHECK(vkEndCommandBuffer(_gpuCommandBuffer->vkCommandBuffer));
     _gpuCommandBuffer->began = false;
-    
+
     ((CCVKDevice *)_device)->gpuDevice()->getCommandBufferPool(std::this_thread::get_id())->yield(_gpuCommandBuffer);
 }
 
