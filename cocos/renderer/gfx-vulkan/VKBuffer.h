@@ -17,7 +17,7 @@ public:
     bool initialize(const BufferViewInfo &info);
     void destroy();
     void resize(uint size);
-    void update(void *buffer, uint offset, uint size);
+    void update(void *buffer, uint offset);
 
     CC_INLINE CCVKGPUBuffer *gpuBuffer() const { return _gpuBuffer; }
     CC_INLINE CCVKGPUBufferView *gpuBufferView() const { return _gpuBufferView; }

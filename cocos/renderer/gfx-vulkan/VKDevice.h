@@ -10,13 +10,14 @@ class CCVKGPUDevice;
 class CCVKGPUContext;
 class CCVKGPUSwapchain;
 
+class CCVKGPUBufferHub;
+class CCVKGPUTransportHub;
 class CCVKGPUDescriptorHub;
 class CCVKGPUSemaphorePool;
 class CCVKGPUDescriptorSetHub;
 
 class CCVKGPUFencePool;
 class CCVKGPURecycleBin;
-class CCVKGPUTransportHub;
 class CCVKGPUStagingBufferPool;
 
 class CC_VULKAN_API CCVKDevice final : public Device {
@@ -73,13 +74,14 @@ public:
     CC_INLINE CCVKGPUDevice *gpuDevice() const { return _gpuDevice; }
     CC_INLINE CCVKGPUSwapchain *gpuSwapchain() { return _gpuSwapchain; }
 
+    CC_INLINE CCVKGPUBufferHub *gpuBufferHub() { return _gpuBufferHub; }
+    CC_INLINE CCVKGPUTransportHub *gpuTransportHub() { return _gpuTransportHub; }
     CC_INLINE CCVKGPUDescriptorHub *gpuDescriptorHub() { return _gpuDescriptorHub; }
     CC_INLINE CCVKGPUSemaphorePool *gpuSemaphorePool() { return _gpuSemaphorePool; }
     CC_INLINE CCVKGPUDescriptorSetHub *gpuDescriptorSetHub() { return _gpuDescriptorSetHub; }
 
     CCVKGPUFencePool *gpuFencePool();
     CCVKGPURecycleBin *gpuRecycleBin();
-    CCVKGPUTransportHub *gpuTransportHub();
     CCVKGPUStagingBufferPool *gpuStagingBufferPool();
 
 private:
@@ -92,9 +94,10 @@ private:
 
     vector<CCVKGPUFencePool *> _gpuFencePools;
     vector<CCVKGPURecycleBin *> _gpuRecycleBins;
-    vector<CCVKGPUTransportHub *> _gpuTransportHubs;
     vector<CCVKGPUStagingBufferPool *> _gpuStagingBufferPools;
 
+    CCVKGPUBufferHub *_gpuBufferHub = nullptr;
+    CCVKGPUTransportHub *_gpuTransportHub = nullptr;
     CCVKGPUDescriptorHub *_gpuDescriptorHub = nullptr;
     CCVKGPUSemaphorePool *_gpuSemaphorePool = nullptr;
     CCVKGPUDescriptorSetHub *_gpuDescriptorSetHub = nullptr;

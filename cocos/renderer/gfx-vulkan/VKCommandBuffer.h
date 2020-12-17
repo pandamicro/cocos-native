@@ -33,7 +33,7 @@ public:
     virtual void setStencilWriteMask(StencilFace face, uint mask) override;
     virtual void setStencilCompareMask(StencilFace face, int reference, uint mask) override;
     virtual void draw(InputAssembler *ia) override;
-    virtual void updateBuffer(Buffer *buffer, const void *data, uint size, uint offset) override;
+    virtual void updateBuffer(Buffer *buffer, const void *data, uint size) override;
     virtual void copyBuffersToTexture(const uint8_t *const *buffers, Texture *texture, const BufferTextureCopy *regions, uint count) override;
     virtual void execute(const CommandBuffer *const *cmdBuffs, uint count) override;
 
@@ -47,7 +47,8 @@ private:
     CCVKGPUPipelineState *_curGPUPipelineState = nullptr;
     vector<CCVKGPUDescriptorSet *> _curGPUDescriptorSets;
     vector<VkDescriptorSet> _curVkDescriptorSets;
-    vector<const uint *> _curDynamicOffsets;
+    vector<uint> _curDynamicOffsets;
+    vector<const uint *> _curDynamicOffsetPtrs;
     vector<uint> _curDynamicOffsetCounts;
     uint _firstDirtyDescriptorSet = UINT_MAX;
 

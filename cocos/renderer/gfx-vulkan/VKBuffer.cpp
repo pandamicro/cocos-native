@@ -87,6 +87,7 @@ void CCVKBuffer::destroy() {
 
     if (_gpuBuffer) {
         if (!_isBufferView) {
+            ((CCVKDevice *)_device)->gpuBufferHub()->erase(_gpuBuffer);
             ((CCVKDevice *)_device)->gpuRecycleBin()->collect(_gpuBuffer);
             _device->getMemoryStatus().bufferSize -= _size;
             CC_DELETE(_gpuBuffer);
@@ -140,7 +141,7 @@ void CCVKBuffer::resize(uint size) {
     }
 }
 
-void CCVKBuffer::update(void *buffer, uint offset, uint size) {
+void CCVKBuffer::update(void *buffer, uint size) {
     CCASSERT(!_isBufferView, "Cannot update through buffer views");
 
 #if CC_DEBUG > 0
@@ -158,13 +159,13 @@ void CCVKBuffer::update(void *buffer, uint offset, uint size) {
 #endif
 
     if (_buffer) {
-        memcpy(_buffer + offset, buffer, size);
+        memcpy(_buffer, buffer, size);
     }
 
     CommandBuffer *cmdBuff = _device->getCommandBuffer();
     cmdBuff->begin();
     const CCVKGPUCommandBuffer *gpuCommandBuffer = ((CCVKCommandBuffer *)cmdBuff)->gpuCommandBuffer();
-    CCVKCmdFuncUpdateBuffer((CCVKDevice *)_device, _gpuBuffer, buffer, offset, size, gpuCommandBuffer);
+    CCVKCmdFuncUpdateBuffer((CCVKDevice *)_device, _gpuBuffer, buffer, size, gpuCommandBuffer);
 }
 
 } // namespace gfx

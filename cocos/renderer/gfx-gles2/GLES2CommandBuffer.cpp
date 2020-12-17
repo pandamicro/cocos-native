@@ -232,7 +232,7 @@ void GLES2CommandBuffer::draw(InputAssembler *ia) {
     }
 }
 
-void GLES2CommandBuffer::updateBuffer(Buffer *buff, const void *data, uint size, uint offset) {
+void GLES2CommandBuffer::updateBuffer(Buffer *buff, const void *data, uint size) {
     if ((_type == CommandBufferType::PRIMARY && !_isInRenderPass) ||
         (_type == CommandBufferType::SECONDARY)) {
         GLES2GPUBuffer *gpuBuffer = ((GLES2Buffer *)buff)->gpuBuffer();
@@ -240,7 +240,6 @@ void GLES2CommandBuffer::updateBuffer(Buffer *buff, const void *data, uint size,
             GLES2CmdUpdateBuffer *cmd = _gles2Allocator->updateBufferCmdPool.alloc();
             cmd->gpuBuffer = gpuBuffer;
             cmd->size = size;
-            cmd->offset = offset;
             cmd->buffer = (uint8_t *)data;
 
             _cmdPackage->updateBufferCmds.push(cmd);

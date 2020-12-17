@@ -14,7 +14,7 @@
 namespace cc {
 namespace gfx {
 
-CCVKGPUCommandBufferPool* CCVKGPUDevice::getCommandBufferPool(std::thread::id threadID) {
+CCVKGPUCommandBufferPool *CCVKGPUDevice::getCommandBufferPool(std::thread::id threadID) {
     if (!commandBufferPools.count(threadID)) {
         commandBufferPools[threadID] = CC_NEW(CCVKGPUCommandBufferPool(this));
     }
@@ -159,21 +159,25 @@ void CCVKCmdFuncCreateBuffer(CCVKDevice *device, CCVKGPUBuffer *gpuBuffer) {
         return;
     }
 
+    gpuBuffer->instanceSize = 0u;
+
     VkBufferCreateInfo bufferInfo{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
     bufferInfo.size = gpuBuffer->size;
     bufferInfo.usage = MapVkBufferUsageFlagBits(gpuBuffer->usage);
 
     VmaAllocationCreateInfo allocInfo{};
-    allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
     if (gpuBuffer->memUsage == MemoryUsage::HOST) {
         bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
         allocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
     } else if (gpuBuffer->memUsage == MemoryUsage::DEVICE) {
         bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
     } else if (gpuBuffer->memUsage == (MemoryUsage::HOST | MemoryUsage::DEVICE)) {
-        bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        gpuBuffer->instanceSize = roundUp(gpuBuffer->size, device->getUboOffsetAlignment());
+        bufferInfo.size = gpuBuffer->instanceSize * device->gpuDevice()->backBufferCount;
+        allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
         allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
     }
 
@@ -605,7 +609,7 @@ void CCVKCmdFuncCreateFence(CCVKDevice *device, CCVKGPUFence *gpuFence) {
     VK_CHECK(vkCreateFence(device->gpuDevice()->vkDevice, &createInfo, nullptr, &gpuFence->vkFence));
 }
 
-void CCVKCmdFuncUpdateBuffer(CCVKDevice *device, CCVKGPUBuffer *gpuBuffer, const void *buffer, uint offset, uint size, const CCVKGPUCommandBuffer *cmdBuffer) {
+void CCVKCmdFuncUpdateBuffer(CCVKDevice *device, CCVKGPUBuffer *gpuBuffer, const void *buffer, uint size, const CCVKGPUCommandBuffer *cmdBuffer) {
     if (!gpuBuffer) return;
 
     const void *dataToUpload = nullptr;
@@ -645,17 +649,18 @@ void CCVKCmdFuncUpdateBuffer(CCVKDevice *device, CCVKGPUBuffer *gpuBuffer, const
         sizeToUpload = size;
     }
 
-    //    if (!cmdBuffer && gpuBuffer->mappedData) {
-    //        device->gpuTransportHub()->checkIn(gpuBuffer->mappedData + offset, dataToUpload, sizeToUpload);
-    //        return;
-    //    }
+    // back buffer instances update command
+    if (gpuBuffer->instanceSize) {
+        device->gpuBufferHub()->record(gpuBuffer, dataToUpload, sizeToUpload);
+        return;
+    }
 
     CCVKGPUBuffer stagingBuffer;
     stagingBuffer.size = sizeToUpload;
     device->gpuStagingBufferPool()->alloc(&stagingBuffer);
     memcpy(stagingBuffer.mappedData, dataToUpload, sizeToUpload);
 
-    VkBufferCopy region{stagingBuffer.startOffset, gpuBuffer->startOffset + offset, sizeToUpload};
+    VkBufferCopy region{stagingBuffer.startOffset, gpuBuffer->startOffset, sizeToUpload};
     auto upload = [&stagingBuffer, &gpuBuffer, &region](const CCVKGPUCommandBuffer *cmdBuffer) {
         vkCmdCopyBuffer(cmdBuffer->vkCommandBuffer, stagingBuffer.vkBuffer, gpuBuffer->vkBuffer, 1, &region);
 

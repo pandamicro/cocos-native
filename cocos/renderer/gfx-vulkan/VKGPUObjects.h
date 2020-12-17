@@ -109,16 +109,18 @@ public:
     vector<VkDrawIndirectCommand> indirectCmds;
     vector<VkDrawIndexedIndirectCommand> indexedIndirectCmds;
 
-    uint8_t *mappedData = nullptr;
-    VmaAllocation vmaAllocation = VK_NULL_HANDLE;
-
     VkAccessFlags accessMask = VK_ACCESS_SHADER_READ_BIT;
     VkPipelineStageFlags targetStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+    uint8_t *mappedData = nullptr;
+    VmaAllocation vmaAllocation = VK_NULL_HANDLE;
 
     // descriptor infos
     VkBuffer vkBuffer = VK_NULL_HANDLE;
     VkDeviceSize startOffset = 0u;
     VkDeviceSize size = 0u;
+
+    VkDeviceSize instanceSize = 0u; // per-back-buffer instance
 };
 typedef vector<CCVKGPUBuffer *> CCVKGPUBufferList;
 
@@ -224,10 +226,12 @@ public:
     // references
     VkDescriptorUpdateTemplate *pUpdateTemplate = nullptr;
 
-    vector<VkDescriptorSet> vkDescriptorSets; // per swapchain image
-
-    vector<CCVKDescriptorInfo> descriptorInfos;
-    vector<VkWriteDescriptorSet> descriptorUpdateEntries;
+    struct DescriptorSetInstance {
+        VkDescriptorSet vkDescriptorSet = VK_NULL_HANDLE;
+        vector<CCVKDescriptorInfo> descriptorInfos;
+        vector<VkWriteDescriptorSet> descriptorUpdateEntries;
+    };
+    vector<DescriptorSetInstance> instances; // per swapchain image
 };
 
 class CCVKGPUDescriptorSetLayout;
@@ -285,11 +289,13 @@ public:
     CCVKGPUTextureView defaultTextureView;
     CCVKGPUBuffer defaultBuffer;
 
-    using CommandBufferPools = tbb::concurrent_unordered_map<std::thread::id,
-        CCVKGPUCommandBufferPool*, std::hash<std::thread::id>>;
+    CCVKGPUSwapchain *swapchain = nullptr; // reference
+
+    using CommandBufferPools = tbb::concurrent_unordered_map<
+        std::thread::id, CCVKGPUCommandBufferPool *, std::hash<std::thread::id>>;
     CommandBufferPools commandBufferPools;
 
-    CCVKGPUCommandBufferPool* getCommandBufferPool(std::thread::id threadID);
+    CCVKGPUCommandBufferPool *getCommandBufferPool(std::thread::id threadID);
 };
 
 /**
@@ -412,7 +418,7 @@ public:
         unordered_map<VkDescriptorType, uint> typeMap;
         for (size_t i = 0u; i < bindings.size(); i++) {
             VkDescriptorSetLayoutBinding &vkBinding = bindings[i];
-            typeMap[vkBinding.descriptorType] += maxSetsPerPool;
+            typeMap[vkBinding.descriptorType] += maxSetsPerPool * vkBinding.descriptorCount;
         }
 
         _poolSizes.clear();
@@ -443,7 +449,7 @@ public:
 
             VkDescriptorPool descriptorPool;
             VK_CHECK(vkCreateDescriptorPool(_device->vkDevice, &createInfo, nullptr, &descriptorPool));
-            _pools.push_back({ descriptorPool, {}, {} });
+            _pools.push_back({descriptorPool, {}, {}});
 
             _pools[idx].freeSets.resize(_maxSetsPerPool);
             VkDescriptorSetAllocateInfo info{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
@@ -474,7 +480,7 @@ private:
 
     struct DescriptorSetPool {
         VkDescriptorPool vkPool = VK_NULL_HANDLE;
-        set<VkDescriptorSet> activeSets;
+        unordered_set<VkDescriptorSet> activeSets;
         vector<VkDescriptorSet> freeSets;
     };
     vector<DescriptorSetPool> _pools;
@@ -533,7 +539,12 @@ public:
         uint hash = getHash(gpuCommandBuffer->queueFamilyIndex);
 
         if (_device->curBackBufferIndex != _lastBackBufferIndex) {
-            reset(); // has to be called in the same thread as cb allocations
+            // don't reset before acquire or the in-flight cbs are not finished yet.
+            // this imposes an implicit assumption: commands recorded before acquire
+            // can only be a low-frequency operation, or else the comman pool would never get reset.
+            if (_device->curBackBufferIndex == _device->swapchain->curImageIndex) {
+                reset(); // has to be called in the same thread as cb allocations so can't do this in device
+            }
             _lastBackBufferIndex = _device->curBackBufferIndex;
         }
 
@@ -678,27 +689,118 @@ public:
     CCVKGPUDescriptorHub(CCVKGPUDevice *device) {
     }
 
-#define DEFINE_DESCRIPTOR_HUB_FN(name)                                                                                                  \
-    CC_INLINE void name(const CCVKGPUBufferView *buffer) { name(_buffers, buffer, (VkDescriptorBufferInfo *)nullptr); }                 \
-    CC_INLINE void name(const CCVKGPUBufferView *buffer, VkDescriptorBufferInfo *descriptor) { name(_buffers, buffer, descriptor); }    \
-    CC_INLINE void name(const CCVKGPUTextureView *texture) { name(_textures, texture, (VkDescriptorImageInfo *)nullptr); }              \
-    CC_INLINE void name(const CCVKGPUTextureView *texture, VkDescriptorImageInfo *descriptor) { name(_textures, texture, descriptor); } \
-    CC_INLINE void name(const CCVKGPUSampler *sampler) { name(_samplers, sampler, (VkDescriptorImageInfo *)nullptr); }                  \
-    CC_INLINE void name(const CCVKGPUSampler *sampler, VkDescriptorImageInfo *descriptor) { name(_samplers, sampler, descriptor); }
-
-    DEFINE_DESCRIPTOR_HUB_FN(connect)
-    DEFINE_DESCRIPTOR_HUB_FN(update)
-    DEFINE_DESCRIPTOR_HUB_FN(disengage)
-
-private:
-    template <typename M, typename K, typename V>
-    void connect(M &map, const K *name, V *descriptor) {
-        map[name].push(descriptor);
+    CC_INLINE void connect(const CCVKGPUBufferView *buffer, VkDescriptorBufferInfo *descriptor, uint instanceIdx) {
+        _buffers[buffer].push(descriptor);
+        _bufferInstaceIndices[descriptor] = instanceIdx;
+    }
+    CC_INLINE void connect(const CCVKGPUTextureView *texture, VkDescriptorImageInfo *descriptor) {
+        _textures[texture].push(descriptor);
+    }
+    CC_INLINE void connect(const CCVKGPUSampler *sampler, VkDescriptorImageInfo *descriptor) {
+        _samplers[sampler].push(descriptor);
     }
 
+    CC_INLINE void update(const CCVKGPUBufferView *buffer) {
+        auto it = _buffers.find(buffer);
+        if (it == _buffers.end()) return;
+        auto &descriptors = it->second;
+        for (uint i = 0u; i < descriptors.size(); i++) {
+            _doUpdate(buffer, descriptors[i]);
+        }
+    }
+    CC_INLINE void update(const CCVKGPUBufferView *buffer, VkDescriptorBufferInfo *descriptor) {
+        auto it = _buffers.find(buffer);
+        if (it == _buffers.end()) return;
+        auto &descriptors = it->second;
+        for (uint i = 0u; i < descriptors.size(); i++) {
+            if (descriptors[i] == descriptor) {
+                _doUpdate(buffer, descriptor);
+                break;
+            }
+        }
+    }
+    CC_INLINE void update(const CCVKGPUTextureView *texture) {
+        auto it = _textures.find(texture);
+        if (it == _textures.end()) return;
+        auto &descriptors = it->second;
+        for (uint i = 0u; i < descriptors.size(); i++) {
+            _doUpdate(texture, descriptors[i]);
+        }
+    }
+    CC_INLINE void update(const CCVKGPUTextureView *texture, VkDescriptorImageInfo *descriptor) {
+        auto it = _textures.find(texture);
+        if (it == _textures.end()) return;
+        auto &descriptors = it->second;
+        for (uint i = 0u; i < descriptors.size(); i++) {
+            if (descriptors[i] == descriptor) {
+                _doUpdate(texture, descriptor);
+                break;
+            }
+        }
+    }
+    CC_INLINE void update(const CCVKGPUSampler *sampler) {
+        auto it = _samplers.find(sampler);
+        if (it == _samplers.end()) return;
+        auto &descriptors = it->second;
+        for (uint i = 0u; i < descriptors.size(); i++) {
+            _doUpdate(sampler, descriptors[i]);
+        }
+    }
+    CC_INLINE void update(const CCVKGPUSampler *sampler, VkDescriptorImageInfo *descriptor) {
+        auto it = _samplers.find(sampler);
+        if (it == _samplers.end()) return;
+        auto &descriptors = it->second;
+        for (uint i = 0u; i < descriptors.size(); i++) {
+            if (descriptors[i] == descriptor) {
+                _doUpdate(sampler, descriptor);
+                break;
+            }
+        }
+    }
+
+    CC_INLINE void disengage(const CCVKGPUBufferView *buffer) {
+        auto it = _buffers.find(buffer);
+        if (it == _buffers.end()) return;
+        for (uint i = 0; i < it->second.size(); ++i) {
+            _bufferInstaceIndices.erase(it->second[i]);
+        }
+        _buffers.erase(it);
+    }
+    CC_INLINE void disengage(const CCVKGPUBufferView *buffer, VkDescriptorBufferInfo *descriptor) {
+        auto it = _buffers.find(buffer);
+        if (it == _buffers.end()) return;
+        auto &descriptors = it->second;
+        descriptors.fastRemove(descriptors.indexOf(descriptor));
+        _bufferInstaceIndices.erase(descriptor);
+    }
+    CC_INLINE void disengage(const CCVKGPUTextureView *texture) {
+        auto it = _textures.find(texture);
+        if (it == _textures.end()) return;
+        _textures.erase(it);
+    }
+    CC_INLINE void disengage(const CCVKGPUTextureView *texture, VkDescriptorImageInfo *descriptor) {
+        auto it = _textures.find(texture);
+        if (it == _textures.end()) return;
+        auto &descriptors = it->second;
+        descriptors.fastRemove(descriptors.indexOf(descriptor));
+    }
+    CC_INLINE void disengage(const CCVKGPUSampler *sampler) {
+        auto it = _samplers.find(sampler);
+        if (it == _samplers.end()) return;
+        _samplers.erase(it);
+    }
+    CC_INLINE void disengage(const CCVKGPUSampler *sampler, VkDescriptorImageInfo *descriptor) {
+        auto it = _samplers.find(sampler);
+        if (it == _samplers.end()) return;
+        auto &descriptors = it->second;
+        descriptors.fastRemove(descriptors.indexOf(descriptor));
+    }
+
+private:
     CC_INLINE void _doUpdate(const CCVKGPUBufferView *buffer, VkDescriptorBufferInfo *descriptor) {
+        VkDeviceSize instanceOffset = _bufferInstaceIndices[descriptor] * buffer->gpuBuffer->instanceSize;
         descriptor->buffer = buffer->gpuBuffer->vkBuffer;
-        descriptor->offset = buffer->gpuBuffer->startOffset + buffer->offset;
+        descriptor->offset = buffer->gpuBuffer->startOffset + instanceOffset + buffer->offset;
         descriptor->range = buffer->range;
     }
 
@@ -710,37 +812,7 @@ private:
         descriptor->sampler = sampler->vkSampler;
     }
 
-    template <typename M, typename K, typename V>
-    void update(M &map, const K *name, V *descriptor) {
-        auto it = map.find(name);
-        if (it == map.end()) return;
-        auto &descriptors = it->second;
-        if (!descriptor) {
-            for (uint i = 0u; i < descriptors.size(); i++) {
-                _doUpdate(name, descriptors[i]);
-            }
-        } else {
-            for (uint i = 0u; i < descriptors.size(); i++) {
-                if (descriptors[i] == descriptor) {
-                    _doUpdate(name, descriptor);
-                    break;
-                }
-            }
-        }
-    }
-
-    template <typename M, typename K, typename V>
-    void disengage(M &map, const K *name, V *descriptor) {
-        auto it = map.find(name);
-        if (it == map.end()) return;
-        if (!descriptor) {
-            map.erase(it);
-        } else {
-            auto &descriptors = it->second;
-            descriptors.fastRemove(descriptors.indexOf(descriptor));
-        }
-    }
-
+    unordered_map<const VkDescriptorBufferInfo *, uint> _bufferInstaceIndices;
     unordered_map<const CCVKGPUBufferView *, CachedArray<VkDescriptorBufferInfo *>> _buffers;
     unordered_map<const CCVKGPUTextureView *, CachedArray<VkDescriptorImageInfo *>> _textures;
     unordered_map<const CCVKGPUSampler *, CachedArray<VkDescriptorImageInfo *>> _samplers;
@@ -753,21 +825,29 @@ class CCVKGPUDescriptorSetHub final : public Object {
 public:
     CCVKGPUDescriptorSetHub(CCVKGPUDevice *device)
     : _device(device) {
-        _setsToBeUpdate.resize(device->backBufferCount);
+        _setsToBeUpdated.resize(device->backBufferCount);
     }
 
     void record(CCVKGPUDescriptorSet *gpuDescriptorSet) {
         update(gpuDescriptorSet);
         for (uint i = 0u; i < _device->backBufferCount; ++i) {
             if (i != _device->curBackBufferIndex) {
-                _setsToBeUpdate[i].insert(gpuDescriptorSet);
+                _setsToBeUpdated[i].insert(gpuDescriptorSet);
+            }
+        }
+    }
+
+    void erase(CCVKGPUDescriptorSet *gpuDescriptorSet) {
+        for (uint i = 0u; i < _device->backBufferCount; ++i) {
+            if (_setsToBeUpdated[i].count(gpuDescriptorSet)) {
+                _setsToBeUpdated[i].erase(gpuDescriptorSet);
             }
         }
     }
 
     void flush() {
-        set<CCVKGPUDescriptorSet *> &sets = _setsToBeUpdate[_device->curBackBufferIndex];
-        for (set<CCVKGPUDescriptorSet *>::iterator it = sets.begin(); it != sets.end(); ++it) {
+        unordered_set<CCVKGPUDescriptorSet *> &sets = _setsToBeUpdated[_device->curBackBufferIndex];
+        for (unordered_set<CCVKGPUDescriptorSet *>::iterator it = sets.begin(); it != sets.end(); ++it) {
             update(*it);
         }
         sets.clear();
@@ -775,21 +855,69 @@ public:
 
 private:
     void update(CCVKGPUDescriptorSet *gpuDescriptorSet) {
+        CCVKGPUDescriptorSet::DescriptorSetInstance &instance = gpuDescriptorSet->instances[_device->curBackBufferIndex];
         if (gpuDescriptorSet->pUpdateTemplate) {
             vkUpdateDescriptorSetWithTemplateKHR(_device->vkDevice,
-                                                 gpuDescriptorSet->vkDescriptorSets[_device->curBackBufferIndex],
-                                                 *gpuDescriptorSet->pUpdateTemplate, gpuDescriptorSet->descriptorInfos.data());
+                                                 instance.vkDescriptorSet,
+                                                 *gpuDescriptorSet->pUpdateTemplate, instance.descriptorInfos.data());
         } else {
-            vector<VkWriteDescriptorSet> &entries = gpuDescriptorSet->descriptorUpdateEntries;
-            VkDescriptorSet set = gpuDescriptorSet->vkDescriptorSets[_device->curBackBufferIndex];
-
-            for (uint i = 0u; i < entries.size(); i++) entries[i].dstSet = set;
+            vector<VkWriteDescriptorSet> &entries = instance.descriptorUpdateEntries;
             vkUpdateDescriptorSets(_device->vkDevice, entries.size(), entries.data(), 0, nullptr);
         }
     }
 
     CCVKGPUDevice *_device = nullptr;
-    vector<set<CCVKGPUDescriptorSet *>> _setsToBeUpdate;
+    vector<unordered_set<CCVKGPUDescriptorSet *>> _setsToBeUpdated;
+};
+
+/**
+ * Manages buffer update events, across all back buffer instances.
+ */
+class CCVKGPUBufferHub final : public Object {
+public:
+    CCVKGPUBufferHub(CCVKGPUDevice *device)
+    : _device(device) {
+        _buffersToBeUpdated.resize(device->backBufferCount);
+    }
+
+    void record(CCVKGPUBuffer *gpuBuffer, const void *src, size_t size) {
+        src = update(gpuBuffer, src, size); // copy from self afterwards
+        for (uint i = 0u; i < _device->backBufferCount; ++i) {
+            if (i != _device->curBackBufferIndex) {
+                _buffersToBeUpdated[i][gpuBuffer] = {src, size};
+            }
+        }
+    }
+
+    void erase(CCVKGPUBuffer *gpuBuffer) {
+        for (uint i = 0u; i < _device->backBufferCount; ++i) {
+            if (_buffersToBeUpdated[i].count(gpuBuffer)) {
+                _buffersToBeUpdated[i].erase(gpuBuffer);
+            }
+        }
+    }
+
+    void flush() {
+        unordered_map<CCVKGPUBuffer *, BufferUpdate> &buffers = _buffersToBeUpdated[_device->curBackBufferIndex];
+        for (unordered_map<CCVKGPUBuffer *, BufferUpdate>::iterator it = buffers.begin(); it != buffers.end(); ++it) {
+            update(it->first, it->second.src, it->second.size);
+        }
+        buffers.clear();
+    }
+
+private:
+    struct BufferUpdate {
+        const void *src = nullptr;
+        size_t size = 0u;
+    };
+    uint8_t *update(CCVKGPUBuffer *gpuBuffer, const void *src, size_t size) {
+        uint8_t *dst = gpuBuffer->mappedData + _device->curBackBufferIndex * gpuBuffer->instanceSize;
+        memcpy(dst, src, size);
+        return dst;
+    }
+
+    CCVKGPUDevice *_device = nullptr;
+    vector<unordered_map<CCVKGPUBuffer *, BufferUpdate>> _buffersToBeUpdated;
 };
 
 /**
@@ -876,46 +1004,34 @@ private:
 
 /**
  * Transport hub for data traveling between host and devices.
- * Record all transfer requests until batched submission.
+ * Record all transfer commands until batched submission.
  */
 //#define ASYNC_BUFFER_UPDATE
 class CCVKGPUTransportHub final : public Object {
 public:
     CCVKGPUTransportHub(CCVKGPUDevice *device)
     : _device(device) {
-        _transfers.resize(16);
     }
 
-    void link(CCVKGPUQueue *queue, CCVKGPUFencePool *fencePool, CCVKGPUStagingBufferPool *stagingBufferPool) {
+    ~CCVKGPUTransportHub() {
+        if (_fence) {
+            vkDestroyFence(_device->vkDevice, _fence, nullptr);
+            _fence = VK_NULL_HANDLE;
+        }
+    }
+
+    void link(CCVKGPUQueue *queue) {
         _queue = queue;
-        _fencePool = fencePool;
-        _stagingBufferPool = stagingBufferPool;
 
         _cmdBuff.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         _cmdBuff.queueFamilyIndex = _queue->queueFamilyIndex;
+
+        VkFenceCreateInfo createInfo{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+        VK_CHECK(vkCreateFence(_device->vkDevice, &createInfo, nullptr, &_fence));
     }
 
     CC_INLINE bool empty() {
         return !_cmdBuff.vkCommandBuffer;
-    }
-
-    void checkIn(void *dst, const void *src, size_t size) {
-#ifdef ASYNC_BUFFER_UPDATE
-        CCVKGPUBuffer stagingBuffer;
-        stagingBuffer.size = size;
-        _stagingBufferPool->alloc(&stagingBuffer);
-        memcpy(stagingBuffer.mappedData, src, size);
-
-        if (_transfers.size() <= _count) {
-            _transfers.resize(_count * 2);
-        }
-        Transfer &transfer = _transfers[_count++];
-        transfer.dst = dst;
-        transfer.src = stagingBuffer.mappedData;
-        transfer.size = size;
-#else
-        memcpy(dst, src, size);
-#endif // ASYNC_BUFFER_UPDATE
     }
 
     template <typename TFunc>
@@ -933,12 +1049,12 @@ public:
 
         if (immediateSubmission) {
             VK_CHECK(vkEndCommandBuffer(_cmdBuff.vkCommandBuffer));
-            VkFence fence = _fencePool->alloc();
             VkSubmitInfo submitInfo{VK_STRUCTURE_TYPE_SUBMIT_INFO};
             submitInfo.commandBufferCount = 1;
             submitInfo.pCommandBuffers = &_cmdBuff.vkCommandBuffer;
-            VK_CHECK(vkQueueSubmit(_queue->vkQueue, 1, &submitInfo, fence));
-            VK_CHECK(vkWaitForFences(_device->vkDevice, 1, &fence, VK_TRUE, DEFAULT_TIMEOUT));
+            VK_CHECK(vkQueueSubmit(_queue->vkQueue, 1, &submitInfo, _fence));
+            VK_CHECK(vkWaitForFences(_device->vkDevice, 1, &_fence, VK_TRUE, DEFAULT_TIMEOUT));
+            vkResetFences(_device->vkDevice, 1, &_fence);
             commandBufferPool->yield(&_cmdBuff);
             _cmdBuff.vkCommandBuffer = VK_NULL_HANDLE;
         }
@@ -953,32 +1069,14 @@ public:
             commandBufferPool->yield(&_cmdBuff);
             _cmdBuff.vkCommandBuffer = VK_NULL_HANDLE;
         }
-
-        if (_count) {
-            for (uint i = 0u; i < _count; i++) {
-                const Transfer &transfer = _transfers[i];
-                memcpy(transfer.dst, transfer.src, transfer.size);
-            }
-            _count = 0u;
-        }
     }
 
 private:
-    struct Transfer {
-        void *dst = nullptr;
-        const void *src = nullptr;
-        size_t size = 0u;
-    };
-
     CCVKGPUDevice *_device = nullptr;
-
     CCVKGPUQueue *_queue = nullptr;
-    CCVKGPUFencePool *_fencePool = nullptr;
-    CCVKGPUStagingBufferPool *_stagingBufferPool = nullptr;
 
     CCVKGPUCommandBuffer _cmdBuff;
-    vector<Transfer> _transfers;
-    uint _count = 0u;
+    VkFence _fence = VK_NULL_HANDLE;
 };
 
 } // namespace gfx

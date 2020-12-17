@@ -22,7 +22,7 @@
     do {                                                                 \
         VkResult err = x;                                                \
         if (err) {                                                       \
-            CC_LOG_ERROR("%s returned Vulkan error: 0x%x", #x, err);     \
+            CC_LOG_ERROR("%s returned Vulkan error: %d", #x, err);       \
             CCASSERT(0, "Vulkan Error");                                 \
         }                                                                \
     } while (0)
