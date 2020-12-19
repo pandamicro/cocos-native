@@ -26,7 +26,7 @@ public:
 
     virtual bool initialize(const CommandBufferInfo &info) override;
     virtual void destroy() override;
-    virtual void begin(RenderPass *renderPass, uint subpass, Framebuffer *frameBuffer) override;
+    virtual void begin(RenderPass *renderPass, uint subpass, Framebuffer *frameBuffer, int submitIndex) override;
     virtual void end() override;
     virtual void beginRenderPass(RenderPass *renderPass, Framebuffer *fbo, const Rect &renderArea, const Color *colors, float depth, int stencil, bool fromSecondaryCB) override;
     virtual void endRenderPass() override;
@@ -45,9 +45,9 @@ public:
     virtual void updateBuffer(Buffer *buff, const void *data, uint size, uint offset) override;
     virtual void copyBuffersToTexture(const uint8_t *const *buffers, Texture *texture, const BufferTextureCopy *regions, uint count) override;
     virtual void execute(const CommandBuffer *const *cmdBuffs, uint32_t count) override;
-    
+
     CC_INLINE bool isCommandBufferBegan() const { return _commandBufferBegan; }
-    CC_INLINE id<MTLCommandBuffer> getMTLCommandBuffer() const { return _mtlCommandBuffer; } 
+    CC_INLINE id<MTLCommandBuffer> getMTLCommandBuffer() const { return _mtlCommandBuffer; }
 
 private:
     void bindDescriptorSets();

@@ -44,7 +44,7 @@ void GLES2CommandBuffer::destroy() {
     CC_SAFE_DELETE(_cmdPackage);
 }
 
-void GLES2CommandBuffer::begin(RenderPass *renderPass, uint subpass, Framebuffer *frameBuffer) {
+void GLES2CommandBuffer::begin(RenderPass *renderPass, uint subpass, Framebuffer *frameBuffer, int submitIndex) {
     _gles2Allocator->clearCmds(_cmdPackage);
     _curGPUPipelineState = nullptr;
     _curGPUInputAssember = nullptr;
