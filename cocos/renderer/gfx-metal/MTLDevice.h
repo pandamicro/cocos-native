@@ -52,7 +52,6 @@ public:
     virtual void copyBuffersToTexture(const uint8_t *const *buffers, Texture *dst, const BufferTextureCopy *regions, uint count) override;
 
     CC_INLINE void *getMTLCommandQueue() const { return _mtlCommandQueue; }
-    CC_INLINE void *getMTKView() const { return _mtkView; }
     CC_INLINE void *getMTLLayer() const { return _mtlLayer; }
     CC_INLINE void *getMTLDevice() const { return _mtlDevice; }
     CC_INLINE uint getMaximumSamplerUnits() const { return _maxSamplerUnits; }
@@ -62,16 +61,17 @@ public:
     CC_INLINE bool isIndirectDrawSupported() const { return _indirectDrawSupported; }
     CC_INLINE CCMTLGPUStagingBufferPool *gpuStagingBufferPool() const { return _gpuStagingBufferPools[_currentFrameIndex]; }
     CC_INLINE bool isSamplerDescriptorCompareFunctionSupported() const { return _isSamplerDescriptorCompareFunctionSupported; }
+    CC_INLINE void *getDSSTexture() const { return _dssTex; }
 
 private:
     void onMemoryWarning();
 
 private:
     void *_mtlCommandQueue = nullptr;
-    void *_mtkView = nullptr;
     void *_mtlDevice = nullptr;
     void *_mtlLayer = nullptr;
     unsigned long _mtlFeatureSet = 0;
+    void *_dssTex = nullptr;
     uint _maxSamplerUnits = 0;
     uint _maxColorRenderTargets = 0;
     uint _maxBufferBindingIndex = 0;
