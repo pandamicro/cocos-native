@@ -52,7 +52,11 @@ bool CCMTLDevice::initialize(const DeviceInfo &info) {
 
     _stateCache = CC_NEW(CCMTLStateCache);
 
+#if CC_PLATFORM == CC_PLATFORM_MAC_OSX
     NSView *view = (NSView *)_windowHandle;
+#else
+    UIView *view = (UIView *)_windowHandle;
+#endif
     CAMetalLayer *layer = static_cast<CAMetalLayer *>(view.layer);
     _mtlLayer = layer;
     id<MTLDevice> mtlDevice = (id<MTLDevice>)layer.device;
@@ -78,13 +82,13 @@ bool CCMTLDevice::initialize(const DeviceInfo &info) {
     }
 
     // Persistent depth stencil texture
-    MTLTextureDescriptor *textureDescriptor = [[MTLTextureDescriptor alloc] init];
-    textureDescriptor.pixelFormat = mu::getSupportedDepthStencilFormat(mtlDevice, gpuFamily, _depthBits);
-    textureDescriptor.width = info.width;
-    textureDescriptor.height = info.height;
-    textureDescriptor.storageMode = MTLStorageModePrivate;
-    textureDescriptor.usage = MTLTextureUsageRenderTarget;
-    _dssTex = [mtlDevice newTextureWithDescriptor:textureDescriptor];
+    MTLTextureDescriptor *dssDescriptor = [[MTLTextureDescriptor alloc] init];
+    dssDescriptor.pixelFormat = mu::getSupportedDepthStencilFormat(mtlDevice, gpuFamily, _depthBits);
+    dssDescriptor.width = info.width;
+    dssDescriptor.height = info.height;
+    dssDescriptor.storageMode = MTLStorageModePrivate;
+    dssDescriptor.usage = MTLTextureUsageRenderTarget;
+    _dssTex = [mtlDevice newTextureWithDescriptor:dssDescriptor];
     _stencilBits = 8;
 
     ContextInfo contextCreateInfo;
