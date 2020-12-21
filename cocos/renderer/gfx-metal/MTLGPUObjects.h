@@ -3,6 +3,7 @@
 #include <vector>
 
 #import "MTLUtils.h"
+#import "MTLConfig.h"
 #import <Metal/MTLBuffer.h>
 #import <Metal/MTLRenderCommandEncoder.h>
 #import <Metal/MTLRenderPipeline.h>
@@ -174,7 +175,7 @@ public:
             buffer = &_pool.back();
             if (_tripleEnabled)
             {
-                for (int i = 0; i < MAX_INFLIGHT_BUFFER; ++i) {
+                for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
                     // Create a new buffer with enough capacity to store one instance of the dynamic buffer data
                     id<MTLBuffer> dataBuffer = [_device newBufferWithLength:chunkSize options:MTLResourceStorageModeShared];
                     buffer->dynamicDataBuffers[i] = dataBuffer;
@@ -197,7 +198,7 @@ public:
     void updateInflightBuffer()
     {
         if (_tripleEnabled) {
-            _inflightIndex = ((_inflightIndex + 1) % MAX_INFLIGHT_BUFFER);
+            _inflightIndex = ((_inflightIndex + 1) % MAX_FRAMES_IN_FLIGHT);
             
             size_t bufferCount = _pool.size();
             Buffer *buffer = nullptr;
@@ -232,7 +233,7 @@ public:
 private:
     struct Buffer {
         id<MTLBuffer> mtlBuffer = nil;
-        vector<id<MTLBuffer>> dynamicDataBuffers {MAX_INFLIGHT_BUFFER};
+        vector<id<MTLBuffer>> dynamicDataBuffers {MAX_FRAMES_IN_FLIGHT};
         uint8_t *mappedData = nullptr;
         size_t curOffset = 0;
     };
