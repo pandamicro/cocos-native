@@ -2,7 +2,6 @@
 
 #include "GLES3Buffer.h"
 #include "GLES3CommandBuffer.h"
-#include "GLES3PrimaryCommandBuffer.h"
 #include "GLES3Context.h"
 #include "GLES3DescriptorSet.h"
 #include "GLES3DescriptorSetLayout.h"
@@ -12,6 +11,7 @@
 #include "GLES3InputAssembler.h"
 #include "GLES3PipelineLayout.h"
 #include "GLES3PipelineState.h"
+#include "GLES3PrimaryCommandBuffer.h"
 #include "GLES3Queue.h"
 #include "GLES3RenderPass.h"
 #include "GLES3Sampler.h"
@@ -45,7 +45,6 @@ bool GLES3Device::initialize(const DeviceInfo &info) {
     }
 
     _gpuStateCache = CC_NEW(GLES3GPUStateCache);
-    _gpuCmdAllocator = CC_NEW(GLES3GPUCommandAllocator);
     _gpuStagingBufferPool = CC_NEW(GLES3GPUStagingBufferPool);
 
     ContextInfo ctxInfo;
@@ -156,7 +155,6 @@ void GLES3Device::destroy() {
     CC_SAFE_DESTROY(_queue);
     CC_SAFE_DESTROY(_cmdBuff);
     CC_SAFE_DELETE(_gpuStagingBufferPool);
-    CC_SAFE_DELETE(_gpuCmdAllocator);
     CC_SAFE_DELETE(_gpuStateCache);
     CC_SAFE_DESTROY(_deviceContext);
     CC_SAFE_DESTROY(_renderContext);
@@ -168,7 +166,6 @@ void GLES3Device::resize(uint width, uint height) {
 }
 
 void GLES3Device::acquire() {
-    _gpuCmdAllocator->releaseCmds();
     _gpuStagingBufferPool->reset();
 }
 
@@ -215,8 +212,9 @@ void GLES3Device::bindDeviceContext(bool bound) {
     }
 }
 
-CommandBuffer *GLES3Device::createCommandBuffer() {
-    return CC_NEW(GLES3PrimaryCommandBuffer(this));
+CommandBuffer *GLES3Device::doCreateCommandBuffer(const CommandBufferInfo &info, bool hasAgent) {
+    if (hasAgent || info.type == CommandBufferType::PRIMARY) return CC_NEW(GLES3PrimaryCommandBuffer(this));
+    return CC_NEW(GLES3CommandBuffer(this));
 }
 
 Fence *GLES3Device::createFence() {

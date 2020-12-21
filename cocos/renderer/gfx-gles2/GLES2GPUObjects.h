@@ -227,7 +227,11 @@ typedef vector<GLES2GPUDescriptorSetLayout *> GLES2GPUDescriptorSetLayoutList;
 class GLES2GPUPipelineLayout final : public Object {
 public:
     GLES2GPUDescriptorSetLayoutList setLayouts;
+
+    // helper storages
     vector<vector<int>> dynamicOffsetIndices;
+    vector<uint> dynamicOffsetOffsets;
+    vector<uint> dynamicOffsets;
     uint dynamicOffsetCount;
 };
 

@@ -6,7 +6,6 @@ namespace gfx {
 
 class GLES3Context;
 class GLES3GPUStateCache;
-class GLES3GPUCommandAllocator;
 class GLES3GPUStagingBufferPool;
 
 class CC_GLES3_API GLES3Device final : public Device {
@@ -35,7 +34,23 @@ public:
     virtual void resize(uint width, uint height) override;
     virtual void acquire() override;
     virtual void present() override;
-    virtual CommandBuffer *createCommandBuffer() override;
+
+    CC_INLINE GLES3GPUStateCache *stateCache() const { return _gpuStateCache; }
+    CC_INLINE GLES3GPUStagingBufferPool *stagingBufferPool() const { return _gpuStagingBufferPool; }
+
+    CC_INLINE bool checkExtension(const String &extension) const {
+        for (size_t i = 0; i < _extensions.size(); ++i) {
+            if (_extensions[i].find(extension) != String::npos) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    CC_INLINE uint getThreadID() const { return _threadID; }
+
+protected:
+    virtual CommandBuffer *doCreateCommandBuffer(const CommandBufferInfo &info, bool hasAgent) override;
     virtual Fence *createFence() override;
     virtual Queue *createQueue() override;
     virtual Buffer *createBuffer() override;
@@ -51,22 +66,6 @@ public:
     virtual PipelineState *createPipelineState() override;
     virtual void copyBuffersToTexture(const uint8_t *const *buffers, Texture *dst, const BufferTextureCopy *regions, uint count) override;
 
-    CC_INLINE GLES3GPUStateCache *stateCache() const { return _gpuStateCache; }
-    CC_INLINE GLES3GPUCommandAllocator *cmdAllocator() const { return _gpuCmdAllocator; }
-    CC_INLINE GLES3GPUStagingBufferPool *stagingBufferPool() const { return _gpuStagingBufferPool; }
-
-    CC_INLINE bool checkExtension(const String &extension) const {
-        for (size_t i = 0; i < _extensions.size(); ++i) {
-            if (_extensions[i].find(extension) != String::npos) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    CC_INLINE uint getThreadID() const { return _threadID; }
-
-protected:
     virtual void bindRenderContext(bool bound) override;
     virtual void bindDeviceContext(bool bound) override;
 
@@ -74,7 +73,6 @@ private:
     GLES3Context *_renderContext = nullptr;
     GLES3Context *_deviceContext = nullptr;
     GLES3GPUStateCache *_gpuStateCache = nullptr;
-    GLES3GPUCommandAllocator *_gpuCmdAllocator = nullptr;
     GLES3GPUStagingBufferPool *_gpuStagingBufferPool = nullptr;
 
     StringArray _extensions;

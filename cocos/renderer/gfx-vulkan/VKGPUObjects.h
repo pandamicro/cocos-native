@@ -245,7 +245,6 @@ public:
     vector<VkDescriptorUpdateTemplate> vkDescriptorUpdateTemplates;
 
     // helper storage
-    vector<uint> dynamicOffsets;
     vector<uint> dynamicOffsetOffsets;
     uint dynamicOffsetCount;
 };
@@ -581,6 +580,7 @@ public:
 
             CommandBufferPool &pool = _pools[hash];
             pool.usedCommandBuffers[gpuCommandBuffer->level].push(gpuCommandBuffer->vkCommandBuffer);
+            gpuCommandBuffer->vkCommandBuffer = VK_NULL_HANDLE;
         }
     }
 
