@@ -66,10 +66,15 @@ bool CCMTLCommandBuffer::isRenderingEntireDrawable(const Rect &rect, const CCMTL
 void CCMTLCommandBuffer::begin(RenderPass *renderPass, uint subpass, Framebuffer *frameBuffer, int submitIndex)
 {
     if (_commandBufferBegan) return;
+    
+    _isSubCB = renderPass != nullptr;
 
-    _mtlCommandBuffer = [_mtlCommandQueue commandBuffer];
-    [_mtlCommandBuffer retain];
-    [_mtlCommandBuffer enqueue];
+    if (!_isSubCB)
+    {
+        // Sub command buffer for parallel shouldn't request any command buffer
+        _mtlCommandBuffer = [[_mtlCommandQueue commandBuffer] retain];
+        [_mtlCommandBuffer enqueue];
+    }
     _numTriangles = 0;
     _numDrawCalls = 0;
     _numInstances = 0;
@@ -86,8 +91,13 @@ void CCMTLCommandBuffer::begin(RenderPass *renderPass, uint subpass, Framebuffer
 void CCMTLCommandBuffer::end()
 {
     if (!_commandBufferBegan) return;
-
     _commandBufferBegan = false;
+    
+    // End encoding for sub encoder of a parallel encoder
+    if (_isSubCB)
+    {
+        _commandEncoder.endEncoding();
+    }
 
     if (_currDrawable)
     {
@@ -96,8 +106,13 @@ void CCMTLCommandBuffer::end()
     }
 }
 
-void CCMTLCommandBuffer::beginRenderPass(RenderPass *renderPass, Framebuffer *fbo, const Rect &renderArea, const Color *colors, float depth, int stencil, bool fromSecondaryCB)
+void CCMTLCommandBuffer::beginRenderPass(RenderPass *renderPass, Framebuffer *fbo, const Rect &renderArea, const Color *colors, float depth, int stencil, const CommandBuffer *const *cmdBuffs, uint32_t count)
 {
+    // Sub CommandBuffer should call begin render pass
+    if (_isSubCB)
+    {
+        return;
+    }
     auto isOffscreen = static_cast<CCMTLFramebuffer *>(fbo)->isOffscreen();
     if (!isOffscreen)
     {
@@ -126,22 +141,40 @@ void CCMTLCommandBuffer::beginRenderPass(RenderPass *renderPass, Framebuffer *fb
         mtlRenderPassDescriptor.stencilAttachment.clearStencil = stencil;
     }
 
-    // Request parallel encoder for primary command buffer
-    
-    _commandEncoder.initialize(_mtlCommandBuffer, mtlRenderPassDescriptor);
+    if (count > 0)
+    {
+        _parallelEncoder = [_mtlCommandBuffer parallelRenderCommandEncoderWithDescriptor:mtlRenderPassDescriptor];
+        // Create command encoders from parallel encoder and assign to command buffers
+        for (uint i = 0u; i < count; ++i)
+        {
+            CCMTLCommandBuffer *cmdBuff = (CCMTLCommandBuffer *)cmdBuffs[i];
+            cmdBuff->_commandEncoder.initialize(_parallelEncoder);
+            cmdBuff->_mtlCommandBuffer = _mtlCommandBuffer;
+        }
+    }
+    else
+    {
+        _commandEncoder.initialize(_mtlCommandBuffer, mtlRenderPassDescriptor);
+    }
     _commandEncoder.setViewport(renderArea);
     _commandEncoder.setScissor(renderArea);
 }
 
 void CCMTLCommandBuffer::endRenderPass()
 {
-    _commandEncoder.endEncoding();
+    if (_parallelEncoder)
+    {
+        [_parallelEncoder endEncoding];
+        _parallelEncoder = nil;
+    }
+    else
+    {
+        _commandEncoder.endEncoding();
+    }
 }
 
 void CCMTLCommandBuffer::execute(const CommandBuffer *const *commandBuffs, uint32_t count)
 {
-    // Create command encoders from parallel encoder and assign to command buffers
-    
     for (uint i = 0; i < count; ++i)
     {
         auto commandBuffer = static_cast<const CCMTLCommandBuffer *>(commandBuffs[i]);
@@ -244,7 +277,7 @@ void CCMTLCommandBuffer::draw(InputAssembler *ia)
     const auto indirectBuffer = static_cast<CCMTLBuffer *>(ia->getIndirectBuffer());
     const auto indexBuffer = static_cast<CCMTLBuffer *>(ia->getIndexBuffer());
     auto mtlEncoder = _commandEncoder.getMTLEncoder();
-    if (_type == CommandBufferType::PRIMARY)
+    if (_type == CommandBufferType::PRIMARY || _type == CommandBufferType::SECONDARY)
     {
         if (indirectBuffer)
         {
@@ -379,10 +412,6 @@ void CCMTLCommandBuffer::draw(InputAssembler *ia)
             }
         }
 
-    }
-    else if (_type == CommandBufferType::SECONDARY)
-    {
-        CC_LOG_ERROR("CommandBufferType::SECONDARY not implemented.");
     }
     else
     {
