@@ -64,6 +64,7 @@ private:
     bool _commandBufferBegan = false;
     bool _isSubCB = false;
     CCMTLDevice *_mtlDevice = nullptr;
+    NSAutoreleasePool *_pool = nullptr;
     id<CAMetalDrawable> _currDrawable = nil;
     id<MTLCommandQueue> _mtlCommandQueue = nil;
     id<MTLCommandBuffer> _mtlCommandBuffer = nil;
