@@ -126,6 +126,8 @@ void CCMTLCommandBuffer::beginRenderPass(RenderPass *renderPass, Framebuffer *fb
         mtlRenderPassDescriptor.stencilAttachment.clearStencil = stencil;
     }
 
+    // Request parallel encoder for primary command buffer
+    
     _commandEncoder.initialize(_mtlCommandBuffer, mtlRenderPassDescriptor);
     _commandEncoder.setViewport(renderArea);
     _commandEncoder.setScissor(renderArea);
@@ -134,6 +136,19 @@ void CCMTLCommandBuffer::beginRenderPass(RenderPass *renderPass, Framebuffer *fb
 void CCMTLCommandBuffer::endRenderPass()
 {
     _commandEncoder.endEncoding();
+}
+
+void CCMTLCommandBuffer::execute(const CommandBuffer *const *commandBuffs, uint32_t count)
+{
+    // Create command encoders from parallel encoder and assign to command buffers
+    
+    for (uint i = 0; i < count; ++i)
+    {
+        auto commandBuffer = static_cast<const CCMTLCommandBuffer *>(commandBuffs[i]);
+        _numDrawCalls += commandBuffer->_numDrawCalls;
+        _numInstances += commandBuffer->_numInstances;
+        _numTriangles += commandBuffer->_numTriangles;
+    }
 }
 
 void CCMTLCommandBuffer::bindPipelineState(PipelineState *pso)
@@ -462,17 +477,6 @@ void CCMTLCommandBuffer::copyBuffersToTexture(const uint8_t *const *buffers, Tex
         [encoder generateMipmapsForTexture:dstTexture];
     }
     [encoder endEncoding];
-}
-
-void CCMTLCommandBuffer::execute(const CommandBuffer *const *commandBuffs, uint32_t count)
-{
-    for (uint i = 0; i < count; ++i)
-    {
-        auto commandBuffer = static_cast<const CCMTLCommandBuffer *>(commandBuffs[i]);
-        _numDrawCalls += commandBuffer->_numDrawCalls;
-        _numInstances += commandBuffer->_numInstances;
-        _numTriangles += commandBuffer->_numTriangles;
-    }
 }
 
 void CCMTLCommandBuffer::bindDescriptorSets()
