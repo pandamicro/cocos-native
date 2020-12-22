@@ -150,14 +150,14 @@ void CCMTLBuffer::resizeBuffer(uint8_t **buffer, uint size, uint oldSize) {
     status.bufferSize -= oldSize;
 }
 
-void CCMTLBuffer::update(void *buffer, uint offset, uint size) {
+void CCMTLBuffer::update(void *buffer, uint size) {
     if (_isBufferView) {
         CC_LOG_WARNING("Cannot update a buffer view.");
         return;
     }
 
     if (_buffer)
-        memcpy(_buffer + offset, buffer, size);
+        memcpy(_buffer, buffer, size);
 
     if (_usage & BufferUsageBit::INDIRECT) {
         auto drawInfoCount = size / _stride;
@@ -181,7 +181,7 @@ void CCMTLBuffer::update(void *buffer, uint offset, uint size) {
                     argument.baseVertex = drawInfo.firstVertex;
                     argument.baseInstance = drawInfo.firstInstance;
                 }
-                memcpy(static_cast<uint8_t *>(_mtlBuffer.contents) + offset, arguments.data(), drawInfoCount * sizeof(MTLDrawIndexedPrimitivesIndirectArguments));
+                memcpy(static_cast<uint8_t *>(_mtlBuffer.contents), arguments.data(), drawInfoCount * sizeof(MTLDrawIndexedPrimitivesIndirectArguments));
             } else if (_drawInfos[0].vertexCount) {
                 vector<MTLDrawPrimitivesIndirectArguments> arguments(drawInfoCount);
                 int i = 0;
@@ -192,7 +192,7 @@ void CCMTLBuffer::update(void *buffer, uint offset, uint size) {
                     argument.vertexStart = drawInfo.firstVertex;
                     argument.baseInstance = drawInfo.firstInstance;
                 }
-                memcpy(static_cast<uint8_t *>(_mtlBuffer.contents) + offset, arguments.data(), drawInfoCount * sizeof(MTLDrawPrimitivesIndirectArguments));
+                memcpy(static_cast<uint8_t *>(_mtlBuffer.contents), arguments.data(), drawInfoCount * sizeof(MTLDrawPrimitivesIndirectArguments));
             }
         }
         return;
@@ -201,7 +201,7 @@ void CCMTLBuffer::update(void *buffer, uint offset, uint size) {
     if (_mtlBuffer) {
         CommandBuffer *cmdBuffer = _device->getCommandBuffer();
         cmdBuffer->begin();
-        static_cast<CCMTLCommandBuffer *>(cmdBuffer)->updateBuffer(this, buffer, size, offset);
+        static_cast<CCMTLCommandBuffer *>(cmdBuffer)->updateBuffer(this, buffer, size);
 #if (CC_PLATFORM == CC_PLATFORM_MAC_OSX)
         if (_mtlResourceOptions == MTLResourceStorageModeManaged)
             [_mtlBuffer didModifyRange:NSMakeRange(0, _size)]; // Synchronize the managed buffer.

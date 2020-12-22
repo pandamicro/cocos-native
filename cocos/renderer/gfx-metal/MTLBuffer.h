@@ -19,7 +19,7 @@ public:
     virtual bool initialize(const BufferViewInfo &info) override;
     virtual void destroy() override;
     virtual void resize(uint size) override;
-    virtual void update(void *buffer, uint offset, uint size) override;
+    virtual void update(void *buffer, uint offset) override;
 
     CC_INLINE id<MTLBuffer> getMTLBuffer() const { return _mtlBuffer; }
     CC_INLINE MTLIndexType getIndexType() const { return _indexType; }

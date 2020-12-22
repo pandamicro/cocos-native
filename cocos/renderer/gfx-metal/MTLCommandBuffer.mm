@@ -153,7 +153,7 @@ void CCMTLCommandBuffer::bindPipelineState(PipelineState *pso)
 void CCMTLCommandBuffer::bindDescriptorSet(uint set, DescriptorSet *descriptorSet, uint dynamicOffsetCount, const uint *dynamicOffsets) {
     CCASSERT(set < _GPUDescriptorSets.size(), "Invalid set index");
     if (dynamicOffsetCount) {
-        _dynamicOffsets[set] = dynamicOffsets;
+        _dynamicOffsets[set].assign(dynamicOffsets, dynamicOffsets + dynamicOffsetCount);
         if (set < _firstDirtyDescriptorSet) _firstDirtyDescriptorSet = set;
     }
 
@@ -337,7 +337,7 @@ void CCMTLCommandBuffer::draw(InputAssembler *ia)
     }
 }
 
-void CCMTLCommandBuffer::updateBuffer(Buffer *buff, const void *data, uint size, uint offset)
+void CCMTLCommandBuffer::updateBuffer(Buffer *buff, const void *data, uint size)
 {
     if (!buff)
     {
@@ -354,7 +354,7 @@ void CCMTLCommandBuffer::updateBuffer(Buffer *buff, const void *data, uint size,
     [encoder copyFromBuffer:stagingBuffer.mtlBuffer
                sourceOffset:stagingBuffer.startOffset
                    toBuffer:((CCMTLBuffer *)buff)->getMTLBuffer()
-          destinationOffset:offset
+          destinationOffset:0
                        size:size];
     [encoder endEncoding];
 }

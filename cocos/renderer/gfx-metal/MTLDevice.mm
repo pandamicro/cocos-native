@@ -204,9 +204,9 @@ void CCMTLDevice::present() {
     CCMTLGPUStagingBufferPool *bufferPool = _gpuStagingBufferPools[_currentFrameIndex];
     _currentFrameIndex = (_currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 
-    auto mtlCommandBuffer = static_cast<CCMTLCommandBuffer *>(_cmdBuff)->getMTLCommandBuffer();
-    auto mtkView = static_cast<MTKView *>(_mtkView);
-    [mtlCommandBuffer presentDrawable:mtkView.currentDrawable];
+    auto cmdBuff = static_cast<CCMTLCommandBuffer *>(_cmdBuff);
+    auto mtlCommandBuffer = cmdBuff->getMTLCommandBuffer();
+    [mtlCommandBuffer presentDrawable:cmdBuff->getCurrentDrawable()];
     [mtlCommandBuffer addCompletedHandler:^(id<MTLCommandBuffer> commandBuffer) {
         [commandBuffer release];
         bufferPool->reset();

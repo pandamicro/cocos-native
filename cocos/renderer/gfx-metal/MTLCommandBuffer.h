@@ -42,22 +42,22 @@ public:
     virtual void setStencilWriteMask(StencilFace face, uint mask) override;
     virtual void setStencilCompareMask(StencilFace face, int ref, uint mask) override;
     virtual void draw(InputAssembler *ia) override;
-    virtual void updateBuffer(Buffer *buff, const void *data, uint size, uint offset) override;
+    virtual void updateBuffer(Buffer *buff, const void *data, uint size) override;
     virtual void copyBuffersToTexture(const uint8_t *const *buffers, Texture *texture, const BufferTextureCopy *regions, uint count) override;
     virtual void execute(const CommandBuffer *const *cmdBuffs, uint32_t count) override;
 
     CC_INLINE bool isCommandBufferBegan() const { return _commandBufferBegan; }
     CC_INLINE id<MTLCommandBuffer> getMTLCommandBuffer() const { return _mtlCommandBuffer; }
+    id<CAMetalDrawable> getCurrentDrawable();
 
 private:
     void bindDescriptorSets();
     bool isRenderingEntireDrawable(const Rect &rect, const CCMTLRenderPass *renderPass);
-    id<CAMetalDrawable> getCurrentDrawable();
 
     CCMTLGPUPipelineState *_gpuPipelineState = nullptr;
 
     vector<CCMTLGPUDescriptorSet *> _GPUDescriptorSets;
-    vector<uint *> _dynamicOffsets;
+    vector<vector<uint>> _dynamicOffsets;
     uint _firstDirtyDescriptorSet = UINT_MAX;
 
     bool _indirectDrawSuppotred = false;
