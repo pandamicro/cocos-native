@@ -31,7 +31,8 @@ CCMTLCommandBuffer::CCMTLCommandBuffer(Device *device)
     _indirectDrawSuppotred = _mtlDevice->isIndirectDrawSupported();
 }
 
-bool CCMTLCommandBuffer::initialize(const CommandBufferInfo &info) {
+bool CCMTLCommandBuffer::initialize(const CommandBufferInfo &info)
+{
     _type = info.type;
     _queue = info.queue;
     return true;
@@ -51,6 +52,17 @@ id<CAMetalDrawable> CCMTLCommandBuffer::getCurrentDrawable()
     return _currDrawable;
 }
 
+bool CCMTLCommandBuffer::isRenderingEntireDrawable(const Rect &rect, const CCMTLRenderPass *renderPass)
+{
+    const int num = renderPass->getColorRenderTargetNums();
+    if (num == 0)
+    {
+        return true;
+    }
+    const auto &renderTargetSize = renderPass->getRenderTargetSizes()[0];
+    return rect.x == 0 && rect.y == 0 && rect.width == renderTargetSize.x && rect.height == renderTargetSize.y;
+}
+
 void CCMTLCommandBuffer::begin(RenderPass *renderPass, uint subpass, Framebuffer *frameBuffer, int submitIndex)
 {
     if (_commandBufferBegan) return;
@@ -63,7 +75,8 @@ void CCMTLCommandBuffer::begin(RenderPass *renderPass, uint subpass, Framebuffer
     _numInstances = 0;
 
     _GPUDescriptorSets.assign(_GPUDescriptorSets.size(), nullptr);
-    for (auto &dynamicOffset : _dynamicOffsets) {
+    for (auto &dynamicOffset : _dynamicOffsets)
+    {
         dynamicOffset.clear();
     }
     _firstDirtyDescriptorSet = UINT_MAX;
@@ -81,17 +94,6 @@ void CCMTLCommandBuffer::end()
         [_currDrawable release];
         _currDrawable = nil;
     }
-}
-
-bool CCMTLCommandBuffer::isRenderingEntireDrawable(const Rect &rect, const CCMTLRenderPass *renderPass)
-{
-    const int num = renderPass->getColorRenderTargetNums();
-    if (num == 0)
-    {
-        return true;
-    }
-    const auto &renderTargetSize = renderPass->getRenderTargetSizes()[0];
-    return rect.x == 0 && rect.y == 0 && rect.width == renderTargetSize.x && rect.height == renderTargetSize.y;
 }
 
 void CCMTLCommandBuffer::beginRenderPass(RenderPass *renderPass, Framebuffer *fbo, const Rect &renderArea, const Color *colors, float depth, int stencil, bool fromSecondaryCB)
@@ -129,7 +131,8 @@ void CCMTLCommandBuffer::beginRenderPass(RenderPass *renderPass, Framebuffer *fb
     _commandEncoder.setScissor(renderArea);
 }
 
-void CCMTLCommandBuffer::endRenderPass() {
+void CCMTLCommandBuffer::endRenderPass()
+{
     _commandEncoder.endEncoding();
 }
 
@@ -144,21 +147,25 @@ void CCMTLCommandBuffer::bindPipelineState(PipelineState *pso)
     _commandEncoder.setTriangleFillMode(_gpuPipelineState->fillMode);
     _commandEncoder.setRenderPipelineState(_gpuPipelineState->mtlRenderPipelineState);
 
-    if (_gpuPipelineState->mtlDepthStencilState) {
+    if (_gpuPipelineState->mtlDepthStencilState)
+    {
         _commandEncoder.setStencilFrontBackReferenceValue(_gpuPipelineState->stencilRefFront, _gpuPipelineState->stencilRefBack);
         _commandEncoder.setDepthStencilState(_gpuPipelineState->mtlDepthStencilState);
     }
 }
 
-void CCMTLCommandBuffer::bindDescriptorSet(uint set, DescriptorSet *descriptorSet, uint dynamicOffsetCount, const uint *dynamicOffsets) {
+void CCMTLCommandBuffer::bindDescriptorSet(uint set, DescriptorSet *descriptorSet, uint dynamicOffsetCount, const uint *dynamicOffsets)
+{
     CCASSERT(set < _GPUDescriptorSets.size(), "Invalid set index");
-    if (dynamicOffsetCount) {
+    if (dynamicOffsetCount)
+    {
         _dynamicOffsets[set].assign(dynamicOffsets, dynamicOffsets + dynamicOffsetCount);
         if (set < _firstDirtyDescriptorSet) _firstDirtyDescriptorSet = set;
     }
 
     auto gpuDescriptorSet = static_cast<CCMTLDescriptorSet *>(descriptorSet)->gpuDescriptorSet();
-    if (_GPUDescriptorSets[set] != gpuDescriptorSet) {
+    if (_GPUDescriptorSets[set] != gpuDescriptorSet)
+    {
         _GPUDescriptorSets[set] = gpuDescriptorSet;
         if (set < _firstDirtyDescriptorSet) _firstDirtyDescriptorSet = set;
     }
@@ -172,11 +179,13 @@ void CCMTLCommandBuffer::bindInputAssembler(InputAssembler *ia)
     }
 }
 
-void CCMTLCommandBuffer::setViewport(const Viewport &vp) {
+void CCMTLCommandBuffer::setViewport(const Viewport &vp)
+{
     _commandEncoder.setViewport(vp);
 }
 
-void CCMTLCommandBuffer::setScissor(const Rect &rect) {
+void CCMTLCommandBuffer::setScissor(const Rect &rect)
+{
     _commandEncoder.setScissor(rect);
 }
 
@@ -185,11 +194,13 @@ void CCMTLCommandBuffer::setLineWidth(const float width)
     CC_LOG_WARNING("Metal doesn't support setting line width.");
 }
 
-void CCMTLCommandBuffer::setDepthBias(float constant, float clamp, float slope) {
+void CCMTLCommandBuffer::setDepthBias(float constant, float clamp, float slope)
+{
     _commandEncoder.setDepthBias(constant, clamp, slope);
 }
 
-void CCMTLCommandBuffer::setBlendConstants(const Color &constants) {
+void CCMTLCommandBuffer::setBlendConstants(const Color &constants)
+{
     _commandEncoder.setBlendColor(constants);
 }
 
@@ -218,17 +229,23 @@ void CCMTLCommandBuffer::draw(InputAssembler *ia)
     const auto indirectBuffer = static_cast<CCMTLBuffer *>(ia->getIndirectBuffer());
     const auto indexBuffer = static_cast<CCMTLBuffer *>(ia->getIndexBuffer());
     auto mtlEncoder = _commandEncoder.getMTLEncoder();
-    if (_type == CommandBufferType::PRIMARY) {
-        if (indirectBuffer) {
+    if (_type == CommandBufferType::PRIMARY)
+    {
+        if (indirectBuffer)
+        {
             uint count = indirectBuffer->getCount();
             const auto &drawInfos = indirectBuffer->getDrawInfos();
             _numDrawCalls += count;
-            for (uint i = 0; i < count; ++i) {
+            for (uint i = 0; i < count; ++i)
+            {
                 const auto &drawInfo = drawInfos[i];
 
-                if (_indirectDrawSuppotred) {
-                    if (indexBuffer) {
-                        if (drawInfo.indexCount) {
+                if (_indirectDrawSuppotred)
+                {
+                    if (indexBuffer)
+                    {
+                        if (drawInfo.indexCount)
+                        {
                             [mtlEncoder drawIndexedPrimitives:_mtlPrimitiveType
                                                     indexType:_indexType
                                                   indexBuffer:indexBuffer->getMTLBuffer()
@@ -236,22 +253,30 @@ void CCMTLCommandBuffer::draw(InputAssembler *ia)
                                                indirectBuffer:indirectBuffer->getMTLBuffer()
                                          indirectBufferOffset:i * sizeof(MTLDrawIndexedPrimitivesIndirectArguments)];
                         }
-                    } else if (drawInfo.vertexCount) {
+                    }
+                    else if (drawInfo.vertexCount)
+                    {
                         [mtlEncoder drawPrimitives:_mtlPrimitiveType
                                     indirectBuffer:indirectBuffer->getMTLBuffer()
                               indirectBufferOffset:i * sizeof(MTLDrawIndexedPrimitivesIndirectArguments)];
                     }
-                } else {
+                }
+                else
+                {
                     NSUInteger offset = 0;
                     offset += drawInfo.firstIndex * indirectBuffer->getStride();
-                    if (drawInfo.indexCount) {
-                        if (drawInfo.instanceCount == 0) {
+                    if (drawInfo.indexCount)
+                    {
+                        if (drawInfo.instanceCount == 0)
+                        {
                             [mtlEncoder drawIndexedPrimitives:_mtlPrimitiveType
                                                    indexCount:drawInfo.indexCount
                                                     indexType:_indexType
                                                   indexBuffer:indexBuffer->getMTLBuffer()
                                             indexBufferOffset:offset];
-                        } else {
+                        }
+                        else
+                        {
                             [mtlEncoder drawIndexedPrimitives:_mtlPrimitiveType
                                                    indexCount:drawInfo.indexCount
                                                     indexType:_indexType
@@ -259,12 +284,17 @@ void CCMTLCommandBuffer::draw(InputAssembler *ia)
                                             indexBufferOffset:offset
                                                 instanceCount:drawInfo.instanceCount];
                         }
-                    } else if (drawInfo.vertexCount) {
-                        if (drawInfo.instanceCount == 0) {
+                    }
+                    else if (drawInfo.vertexCount)
+                    {
+                        if (drawInfo.instanceCount == 0)
+                        {
                             [mtlEncoder drawPrimitives:_mtlPrimitiveType
                                            vertexStart:drawInfo.firstIndex
                                            vertexCount:drawInfo.vertexCount];
-                        } else {
+                        }
+                        else
+                        {
                             [mtlEncoder drawPrimitives:_mtlPrimitiveType
                                            vertexStart:drawInfo.firstIndex
                                            vertexCount:drawInfo.vertexCount
@@ -282,13 +312,16 @@ void CCMTLCommandBuffer::draw(InputAssembler *ia)
             {
                 NSUInteger offset = 0;
                 offset += drawInfo.firstIndex * indexBuffer->getStride();
-                if (drawInfo.instanceCount == 0) {
+                if (drawInfo.instanceCount == 0)
+                {
                     [mtlEncoder drawIndexedPrimitives:_mtlPrimitiveType
                                            indexCount:drawInfo.indexCount
                                             indexType:_indexType
                                           indexBuffer:indexBuffer->getMTLBuffer()
                                     indexBufferOffset:offset];
-                } else {
+                }
+                else
+                {
                     [mtlEncoder drawIndexedPrimitives:_mtlPrimitiveType
                                            indexCount:drawInfo.indexCount
                                             indexType:_indexType
@@ -296,12 +329,17 @@ void CCMTLCommandBuffer::draw(InputAssembler *ia)
                                     indexBufferOffset:offset
                                         instanceCount:drawInfo.instanceCount];
                 }
-            } else if (drawInfo.vertexCount) {
-                if (drawInfo.instanceCount == 0) {
+            }
+            else if (drawInfo.vertexCount)
+            {
+                if (drawInfo.instanceCount == 0)
+                {
                     [mtlEncoder drawPrimitives:_mtlPrimitiveType
                                    vertexStart:drawInfo.firstIndex
                                    vertexCount:drawInfo.vertexCount];
-                } else {
+                }
+                else
+                {
                     [mtlEncoder drawPrimitives:_mtlPrimitiveType
                                    vertexStart:drawInfo.firstIndex
                                    vertexCount:drawInfo.vertexCount
@@ -385,10 +423,12 @@ void CCMTLCommandBuffer::copyBuffersToTexture(const uint8_t *const *buffers, Tex
         stagingRegion.sourceSize = {w, h, region.texExtent.depth};
         stagingRegion.destinationSlice = region.texSubres.baseArrayLayer;
         stagingRegion.destinationLevel = region.texSubres.mipLevel;
-        stagingRegion.destinationOrigin = {
+        stagingRegion.destinationOrigin =
+        {
             static_cast<uint>(region.texOffset.x),
             static_cast<uint>(region.texOffset.y),
-            static_cast<uint>(region.texOffset.z)};
+            static_cast<uint>(region.texOffset.z)
+        };
         totalSize += stagingRegion.sourceBytesPerImage;
     }
 
@@ -412,7 +452,8 @@ void CCMTLCommandBuffer::copyBuffersToTexture(const uint8_t *const *buffers, Tex
                     bytesPerImage:bytesPerImage];
 
         offset += stagingRegion.sourceBytesPerImage;
-        if (convertedData != buffers[i]) {
+        if (convertedData != buffers[i])
+        {
             CC_FREE(convertedData);
         }
     }
@@ -472,8 +513,8 @@ void CCMTLCommandBuffer::bindDescriptorSets()
     }
 
     const auto &samplers = _gpuPipelineState->gpuShader->samplers;
-    auto mtlEncoder = _commandEncoder.getMTLEncoder();
-    for (const auto &iter : samplers) {
+    for (const auto &iter : samplers)
+    {
         const auto &sampler = iter.second;
 
         const auto gpuDescriptorSet = _GPUDescriptorSets[sampler.set];
